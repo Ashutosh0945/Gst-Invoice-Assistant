@@ -1,0 +1,19 @@
+# Trimmed dependency set for the Vercel serverless function -- only what
+# backend.api.main actually imports at module load time. Pandas, Streamlit, Prefect, PaddleOCR, and torch/transformers are
+# deliberately excluded here (see requirements.txt / requirements-ml.txt for
+# the full local/Docker stacks); OCR and LayoutLMv3 fall back automatically
+# when their optional deps aren't installed, so the API still runs, just
+# without those two upgrade paths.
+fastapi>=0.110
+python-multipart>=0.0.9
+pydantic>=2.6
+pydantic-settings>=2.2
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+httpx>=0.27
+pymupdf>=1.24
+opencv-python-headless>=4.9
+numpy>=1.26
+cryptography>=42.0
+zxing-cpp>=2.2
+qrcode[pil]>=7.4

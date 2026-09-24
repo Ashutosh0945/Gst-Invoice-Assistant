@@ -1,0 +1,52 @@
+hsn_sac,description,gst_rate
+1006,Rice,5
+1101,Wheat or meslin flour,5
+0402,"Milk and cream, concentrated or sweetened",5
+1905,"Bread, pastry, cakes, biscuits",18
+2106,Food preparations not elsewhere specified,5
+3004,Medicaments (therapeutic or prophylactic use),5
+3401,Soap; organic surface-active products,18
+3305,Preparations for use on the hair,18
+3306,Preparations for oral or dental hygiene,18
+4820,"Registers, notebooks, letter pads",0
+8471,Automatic data processing machines (computers),18
+8517,"Telephones, smartphones",18
+8528,"Monitors, projectors, television receivers",18
+8415,Air conditioning machines,18
+8418,"Refrigerators, freezers",18
+8703,Motor cars (<=1200cc petrol / <=1500cc diesel),18
+8711,Motorcycles (<=350cc),18
+2202,"Waters, sweetened or flavoured (aerated drinks)",40
+2402,"Cigars, cheroots, cigarillos and cigarettes",40
+9503,Toys,18
+6109,"T-shirts, singlets, knitted or crocheted",5
+9973,Leasing or rental services (SAC),18
+9954,Construction services (SAC),18
+9983,"Other professional, technical or business services (SAC)",18
+9985,Support services (SAC),18
+998314,IT consulting and support services (SAC),18
+998313,IT design and development services (SAC),18
+4802,"Uncoated paper for writing/printing (copier paper)",18
+9403,"Other furniture (office furniture)",18
+9401,"Seats and chairs",18
+8443,"Printers and printing machinery",18
+8544,"Insulated wire and cable",18
+7308,"Structures of iron or steel",18
+2523,Portland cement,18
+996601,Rental of motor vehicles with operator (rent-a-cab) (SAC),5|18
+996425,"Non-scheduled passenger road transport, e.g. coach hire (SAC)",5|18
+9964,Passenger transport services (SAC),5|18
+996334,Outdoor catering services (SAC),5|18
+99633,Food and beverage serving services (SAC),5|18
+996311,Hotel and room accommodation services (SAC),5|18
+998551,Tour operator services (SAC),5|18
+998552,Tourist guide services (SAC),18
+998555,Travel agency and tour-booking services (SAC),18
+996411,Local passenger transport by rail/road (SAC),5
+996421,Long-distance passenger transport by rail (SAC),5
+996423,Passenger transport by air (SAC),5|18
+997131,Life insurance services (SAC),18
+997132,Accident and health insurance services (SAC),18
+99972,Beauty and physical well-being services (SAC),18
+9995,Services of membership organisations (SAC),18
+9608,"Pens, markers and felt-tipped pens",18

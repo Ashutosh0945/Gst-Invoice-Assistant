@@ -1,0 +1,17 @@
+dashboard/
+data/raw/
+data/inbox/
+data/staging/
+data/samples/
+data/layoutlm_dataset/
+models/
+ml/
+tests/
+scripts/
+sql/
+docker-compose.yml
+Dockerfile
+Dockerfile.ml
+requirements-ml.txt
+pytest.ini
+*.db

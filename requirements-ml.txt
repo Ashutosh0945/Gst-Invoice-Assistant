@@ -1,0 +1,9 @@
+# Heavy ML stack: OCR + LayoutLMv3. Install only where you run OCR / training.
+paddlepaddle>=3.0          # CPU build; use paddlepaddle-gpu for CUDA
+paddleocr>=3.0
+torch>=2.2
+transformers>=4.40
+datasets>=2.19
+accelerate>=0.29
+seqeval>=1.2
+pillow>=10.0

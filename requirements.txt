@@ -1,0 +1,18 @@
+# Core (API, rules, DB, ETL, dashboard) -- works without any ML dependency
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pydantic>=2.6
+pydantic-settings>=2.2
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+httpx>=0.27
+pandas>=2.1
+numpy>=1.26
+opencv-python-headless>=4.9
+pymupdf>=1.24
+prefect>=3.0
+pytest>=8.0
+cryptography>=42.0        # e-invoice QR signature verification (RS256)
+zxing-cpp>=2.2            # robust QR decoding (e-invoice QRs are too dense for OpenCV's detector)
+qrcode[pil]>=7.4          # demo/test only: draws signed QR codes onto synthetic invoices

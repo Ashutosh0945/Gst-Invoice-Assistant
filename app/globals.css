@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { background: #1E1D35; color: #ECECF4; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+@layer components {
+  .neu-card { @apply bg-base-raised rounded-xl2 shadow-neu; }
+  .neu-tile { @apply bg-base rounded-xl shadow-neu-sm; }
+  .neu-inset { @apply bg-base-deep rounded-xl shadow-neu-in; }
+  .icon-tile { @apply w-12 h-12 grid place-items-center rounded-xl bg-base shadow-neu-sm; }
+  .pill { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-base shadow-neu-in; }
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition
+         bg-base shadow-neu-sm text-ink hover:text-white active:shadow-neu-in disabled:opacity-50; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition
+         bg-accent text-white shadow-glow hover:bg-accent-soft active:translate-y-px disabled:opacity-50; }
+  .field { @apply w-full bg-base-deep shadow-neu-in rounded-xl px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint
+           outline-none focus:ring-2 focus:ring-accent/60; }
+  .label { @apply text-[11px] font-semibold tracking-[0.12em] text-ink-soft; }
+  .tbl { @apply w-full text-sm; }
+  .tbl th { @apply text-left font-medium text-ink-faint text-xs pb-3 px-3 whitespace-nowrap; }
+  .tbl td { @apply py-3 px-3 border-t border-base-line/70 align-middle; }
+  .tbl td:first-child a, .tbl td a.font-semibold { @apply whitespace-nowrap; }
+  .tbl tbody tr { @apply transition-colors; }
+  .tbl tbody tr:hover { @apply bg-white/[0.02]; }
+  .num { @apply text-right tabular whitespace-nowrap; }
+}
+
+:focus-visible { outline: 2px solid #7C7CF2; outline-offset: 2px; border-radius: 10px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2C2B48; border-radius: 10px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .45s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+@layer components {
+  .icon-btn { @apply w-11 h-11 grid place-items-center rounded-xl bg-base shadow-neu-sm text-ink-soft hover:text-white transition; }
+}

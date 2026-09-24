@@ -1,0 +1,18 @@
+# Next.js web app (the dashboard). Talks to the API service over the compose network.
+FROM node:20-alpine AS build
+WORKDIR /web
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY app ./app
+COPY components ./components
+COPY lib ./lib
+COPY next.config.mjs tailwind.config.ts postcss.config.mjs tsconfig.json ./
+ENV BACKEND_URL=http://api:8000
+RUN npx next build
+
+FROM node:20-alpine
+WORKDIR /web
+ENV NODE_ENV=production BACKEND_URL=http://api:8000
+COPY --from=build /web ./
+EXPOSE 3000
+CMD ["npx", "next", "start", "-p", "3000"]
