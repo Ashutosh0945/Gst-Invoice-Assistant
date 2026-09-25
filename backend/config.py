@@ -72,15 +72,6 @@ class Settings(BaseSettings):
     # food) when you supply the same category onward. Comma-separated, e.g. "9964,9966".
     itc_same_line_prefixes: str = ""
 
-    # --- personal app ---
-    console_enabled: bool = True                       # business console API (staff login or API_KEY required)
-    cors_origins: str = ""                             # comma-separated; empty = same-origin only
-    session_secret: str = "change-me-in-production"   # signs login sessions (set a long random value!)
-    session_days: int = 30
-    cookie_secure: bool = False                        # true when served over HTTPS
-    assistant_model: str = "openai/gpt-4o-mini"        # any OpenRouter model that supports tool calling
-    tax_rules_path: Path | None = None                 # default: data/tax/rules_india.json
-
     # --- LLM explanation layer (optional) ---
     openrouter_api_key: str | None = Field(default=None)
     openrouter_base_url: str = "https://openrouter.ai/api/v1"

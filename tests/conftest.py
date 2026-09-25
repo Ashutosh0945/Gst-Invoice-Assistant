@@ -2,9 +2,6 @@ import os
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("LLM_ENABLED", "false")
-os.environ.setdefault("CONSOLE_ENABLED", "true")
-os.environ.setdefault("API_KEY", "test-console-key")
-os.environ.setdefault("OPENROUTER_API_KEY", "")
 
 import pytest
 

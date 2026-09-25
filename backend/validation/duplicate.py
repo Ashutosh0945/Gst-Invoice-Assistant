@@ -34,8 +34,7 @@ def _similar(a: str | None, b: str | None) -> float:
     return SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
 
 
-def find_duplicates(db: Session, doc_hash: str, inv: InvoiceData, exclude_invoice_id=None, owner_id=None) -> list[Finding]:
-    """owner_id scopes the search to one user's documents (the personal app); None = whole register."""
+def find_duplicates(db: Session, doc_hash: str, inv: InvoiceData, exclude_invoice_id=None) -> list[Finding]:
     settings = get_settings()
     findings: list[Finding] = []
 
@@ -43,7 +42,6 @@ def find_duplicates(db: Session, doc_hash: str, inv: InvoiceData, exclude_invoic
     stmt = select(Invoice).where(Invoice.document_hash == doc_hash)
     if exclude_invoice_id is not None:
         stmt = stmt.where(Invoice.id != exclude_invoice_id)
-    stmt = stmt.where(Invoice.owner_id == owner_id) if owner_id is not None else stmt.where(Invoice.owner_id.is_(None))
     exact = db.execute(stmt).scalars().first()
     if exact is not None:
         findings.append(Finding(
@@ -65,8 +63,6 @@ def find_duplicates(db: Session, doc_hash: str, inv: InvoiceData, exclude_invoic
     candidates_stmt = select(Invoice).where(Invoice.invoice_number.isnot(None))
     if exclude_invoice_id is not None:
         candidates_stmt = candidates_stmt.where(Invoice.id != exclude_invoice_id)
-    candidates_stmt = (candidates_stmt.where(Invoice.owner_id == owner_id) if owner_id is not None
-                       else candidates_stmt.where(Invoice.owner_id.is_(None)))
     if inv.vendor_gstin:
         candidates_stmt = candidates_stmt.where(Invoice.vendor_gstin_raw == inv.vendor_gstin)
     candidates = db.execute(candidates_stmt).scalars().all()

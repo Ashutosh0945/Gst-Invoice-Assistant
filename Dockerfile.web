@@ -8,7 +8,6 @@ COPY components ./components
 COPY lib ./lib
 COPY next.config.mjs tailwind.config.ts postcss.config.mjs tsconfig.json ./
 ENV BACKEND_URL=http://api:8000
-ARG NEXT_PUBLIC_BRAND_NAME NEXT_PUBLIC_BRAND_TAGLINE NEXT_PUBLIC_BRAND_ACCENT NEXT_PUBLIC_BRAND_LOGO_URL NEXT_PUBLIC_BRAND_SUPPORT_EMAIL
 RUN npx next build
 
 FROM node:20-alpine

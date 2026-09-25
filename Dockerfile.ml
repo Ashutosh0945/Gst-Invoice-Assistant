@@ -15,7 +15,6 @@ COPY backend ./backend
 COPY sql ./sql
 COPY data/hsn ./data/hsn
 COPY data/itc ./data/itc
-COPY data/tax ./data/tax
 COPY ml ./ml
 COPY scripts ./scripts
 

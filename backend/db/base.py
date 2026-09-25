@@ -11,18 +11,9 @@ class Base(DeclarativeBase):
     pass
 
 
-def normalize_db_url(url: str) -> str:
-    """Hosts hand out 'postgres://' or 'postgresql://' URLs; SQLAlchemy needs the driver named."""
-    if url.startswith("postgres://"):
-        url = "postgresql://" + url[len("postgres://"):]
-    if url.startswith("postgresql://"):
-        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
-    return url
-
-
 def make_engine():
     settings = get_settings()
-    url = normalize_db_url(settings.database_url)
+    url = settings.database_url
 
     if url.startswith("sqlite") and ":memory:" in url:
         # A single shared connection so every session sees the same in-memory

@@ -6,11 +6,9 @@ from fastapi.testclient import TestClient
 from backend.api.main import app
 from backend.synthetic.generator import generate
 
-KEY = {"X-API-Key": "test-console-key"}
-
 
 def test_upload_2b_and_read_itc(db, tmp_path):
-    client = TestClient(app, headers=KEY)
+    client = TestClient(app)
     d = date.today().replace(day=1) - timedelta(days=20)
     si = generate(tmp_path / "a.pdf", seed=3, invoice_date=d, invoice_number="ZX/1001")
     with open(si.pdf_path, "rb") as f:
@@ -45,5 +43,5 @@ def test_upload_2b_and_read_itc(db, tmp_path):
 
 
 def test_bad_2b_file_is_a_422(db):
-    r = TestClient(app, headers=KEY).post("/api/v1/gstr2b/import", files={"file": ("x.json", "{}", "application/json")})
+    r = TestClient(app).post("/api/v1/gstr2b/import", files={"file": ("x.json", "{}", "application/json")})
     assert r.status_code == 422

@@ -29,7 +29,7 @@ html, body { background: #1E1D35; color: #ECECF4; }
   .num { @apply text-right tabular whitespace-nowrap; }
 }
 
-:focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; border-radius: 10px; }
+:focus-visible { outline: 2px solid #7C7CF2; outline-offset: 2px; border-radius: 10px; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #2C2B48; border-radius: 10px; }
 

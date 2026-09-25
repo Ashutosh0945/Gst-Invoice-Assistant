@@ -188,16 +188,9 @@ def main() -> None:
         imp = import_gstr2b(db, (SAMPLES / fname).read_bytes(), fname)
         print(f"Imported GSTR-2B {imp.return_period}: {imp.record_count} records")
 
-    from backend.db.models import User
-    from backend.personal.auth import hash_password
-    if not db.query(User).filter(User.email == "staff@demo.in").first():
-        db.add(User(email="staff@demo.in", name="Demo Accountant", password_hash=hash_password("demo12345"),
-                    profile_type="business", role="staff"))
-        db.commit()
     n = reassess_all(db)
     print(f"Assessed ITC for {n} invoices.")
     print(f"\nSample files are in {SAMPLES}. Demo key: {PUBLIC_KEY}")
-    print("Console login: staff@demo.in / demo12345")
     db.close()
 
 

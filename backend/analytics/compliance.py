@@ -25,7 +25,7 @@ def itc_summary(db: Session) -> dict:
         func.sum(ItcAssessment.total_itc), func.sum(ItcAssessment.eligible_itc),
         func.sum(ItcAssessment.blocked_itc), func.sum(ItcAssessment.review_itc),
         func.sum(ItcAssessment.at_risk_itc),
-    ).join(Invoice, Invoice.id == ItcAssessment.invoice_id).group_by(ItcAssessment.status)).all()
+    ).group_by(ItcAssessment.status)).all()
     by_status = [{"status": s, "invoice_count": c, "total_itc": _d(t), "eligible_itc": _d(e),
                   "blocked_itc": _d(b), "review_itc": _d(r), "at_risk_itc": _d(a)}
                  for s, c, t, e, b, r, a in rows]

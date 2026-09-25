@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from backend.analytics import compliance
 from backend.api.deps import require_api_key
 from backend.api.schemas_api import InvoiceDetailOut, PaymentIn, QrVerifyIn
-from backend.api.deps import get_console_db as get_db
+from backend.db.base import get_db
 from backend.db.models import Gstr2bImport, Invoice
 from backend.einvoice.qr import find_signed_qr
 from backend.einvoice.verify import verify_einvoice

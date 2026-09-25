@@ -16,7 +16,7 @@ from backend.api.schemas_api import (
     ReconciliationSummaryOut, ReviewActionIn, StatusSummaryOut, VendorSpendOut,
 )
 from backend.analytics import api_queries as analytics
-from backend.api.deps import get_console_db as get_db
+from backend.db.base import get_db
 from backend.db.models import Invoice
 from backend.services.pipeline_service import process_invoice_file
 from backend.services.review_service import approve_invoice, correct_invoice, reject_invoice
@@ -136,9 +136,3 @@ def analytics_reconciliation_summary(db: Session = Depends(get_db)):
 @router.get("/analytics/duplicates", response_model=list[DuplicateFindingOut])
 def analytics_duplicates(limit: int = Query(50, le=200), db: Session = Depends(get_db)):
     return analytics.duplicate_findings(db, limit)
-
-
-@router.get("/console/me")
-def console_me(principal: dict = Depends(require_api_key)):
-    """Who is using the console (the website calls this to check the login)."""
-    return principal

@@ -106,11 +106,6 @@ def extract_rules_ensemble(words: list[OCRWord], pages: list[PageData]) -> Invoi
     except Exception as exc:  # noqa: BLE001 - a heuristic crash must not lose the baseline result
         logger.warning("Layout heuristic extractor failed: %s", exc)
     best = max(candidates, key=_consistency_score)   # ties keep the regex baseline (first)
-    for other in candidates:                           # fill descriptive gaps (never amounts) from the other reader
-        for f in ("vendor_name", "buyer_name"):
-            val = getattr(other, f)
-            if getattr(best, f) is None and val and ":" not in val and not val.replace(" ", "").isdigit():
-                setattr(best, f, val)
     if _consistency_score(best) >= _FULLY_CONSISTENT:
         # Every total cross-checks against the line items, which is independent evidence
         # that the amounts were read correctly; raise their confidence accordingly.

@@ -103,7 +103,6 @@ def finding_frequency(db: Session, limit: int = 30) -> list[dict]:
 def reconciliation_summary(db: Session) -> list[dict]:
     rows = db.execute(
         select(ReconciliationResult.status, func.count(ReconciliationResult.id))
-        .join(Invoice, Invoice.id == ReconciliationResult.invoice_id)
         .group_by(ReconciliationResult.status)
     ).all()
     return [{"status": s, "line_count": c} for s, c in rows]
