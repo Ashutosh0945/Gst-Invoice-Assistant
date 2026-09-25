@@ -115,6 +115,7 @@ class Invoice(Base):
     vendor_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("vendors.id"))
     po_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("purchase_orders.id"))
 
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), index=True)
     source_filename: Mapped[str] = mapped_column(String(500))
     document_hash: Mapped[str] = mapped_column(String(64), index=True)  # sha256 of raw bytes
 
@@ -318,3 +319,72 @@ class ItcAssessment(Base):
     assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     invoice: Mapped["Invoice"] = relationship(back_populates="itc")
+
+
+# ----------------------------------------------------------------------------- personal app
+class User(Base):
+    """A person using the personal app: an individual, a shop owner or a freelancer."""
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    password_hash: Mapped[str] = mapped_column(String(255))
+    profile_type: Mapped[str] = mapped_column(String(20), default="individual")   # individual/business/freelancer
+    role: Mapped[str | None] = mapped_column(String(20), default="member")        # member / staff (console access)
+    business_name: Mapped[str | None] = mapped_column(String(255))
+    gstin: Mapped[str | None] = mapped_column(String(15))
+    state_code: Mapped[str | None] = mapped_column(String(2))
+    tax_inputs: Mapped[dict | None] = mapped_column(JSONType)       # last tax-planner inputs
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserBill(Base):
+    """A bill in a user's wallet. Wraps an extracted Invoice with personal metadata."""
+    __tablename__ = "user_bills"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    owner_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    invoice_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), unique=True)
+    category: Mapped[str] = mapped_column(String(40), default="other")
+    note: Mapped[str | None] = mapped_column(Text)
+    warranty_until: Mapped[date | None] = mapped_column(Date)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    invoice: Mapped["Invoice"] = relationship()
+
+
+class SalesInvoice(Base):
+    """An invoice the user sends to their own customer or client."""
+    __tablename__ = "sales_invoices"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    owner_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    number: Mapped[str] = mapped_column(String(32))
+    issue_date: Mapped[date] = mapped_column(Date)
+    due_date: Mapped[date | None] = mapped_column(Date)
+    client_name: Mapped[str] = mapped_column(String(255))
+    client_email: Mapped[str | None] = mapped_column(String(255))
+    client_gstin: Mapped[str | None] = mapped_column(String(15))
+    place_of_supply: Mapped[str | None] = mapped_column(String(2))
+    items: Mapped[list] = mapped_column(JSONType)          # computed lines, see backend/personal/invoicing.py
+    subtotal: Mapped[Decimal] = mapped_column(MONEY)
+    cgst: Mapped[Decimal] = mapped_column(MONEY, default=0)
+    sgst: Mapped[Decimal] = mapped_column(MONEY, default=0)
+    igst: Mapped[Decimal] = mapped_column(MONEY, default=0)
+    total: Mapped[Decimal] = mapped_column(MONEY)
+    status: Mapped[str] = mapped_column(String(12), default="SENT")   # DRAFT/SENT/PAID
+    paid_on: Mapped[date | None] = mapped_column(Date)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    owner_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(12))          # user / assistant
+    content: Mapped[str] = mapped_column(Text)
+    meta: Mapped[dict | None] = mapped_column(JSONType)     # tools used, sources, cards
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

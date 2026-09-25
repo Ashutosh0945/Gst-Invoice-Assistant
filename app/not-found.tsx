@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { Card, Empty } from "@/components/ui";
 
 export default function NotFound() {
   return (
-    <div className="pt-10">
-      <Card><Empty title="That page or invoice doesn't exist" hint="It may have been removed, or the link is wrong."
-        action={<Link href="/" className="btn-primary">Go to overview</Link>} /></Card>
+    <div className="min-h-screen grid place-items-center px-5">
+      <div className="neu-card p-8 text-center max-w-md">
+        <p className="font-bold text-lg">This page doesn&apos;t exist</p>
+        <p className="text-sm text-ink-soft mt-2">The link may be wrong or the item was deleted.</p>
+        <Link href="/app" className="btn-primary mt-5">Go home</Link>
+      </div>
     </div>
   );
 }

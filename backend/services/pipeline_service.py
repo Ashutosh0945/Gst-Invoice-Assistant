@@ -31,7 +31,7 @@ from backend.validation.engine import validate_invoice
 logger = logging.getLogger(__name__)
 
 
-def process_invoice_file(db: Session, path: str | Path) -> Invoice:
+def process_invoice_file(db: Session, path: str | Path, owner_id=None, source_name: str | None = None) -> Invoice:
     path = Path(path)
     doc_hash, pages = load_document(path)
     inv_data, page_sources = extract_invoice(pages)
@@ -41,7 +41,8 @@ def process_invoice_file(db: Session, path: str | Path) -> Invoice:
     vendor = get_or_create_vendor(db, inv_data.vendor_gstin, inv_data.vendor_name)
 
     invoice = Invoice(
-        source_filename=path.name,
+        source_filename=source_name or path.name,
+        owner_id=owner_id,
         document_hash=doc_hash,
         vendor_id=vendor.id if vendor else None,
         vendor_name_raw=inv_data.vendor_name,
@@ -80,7 +81,7 @@ def process_invoice_file(db: Session, path: str | Path) -> Invoice:
 
     findings: list[Finding] = []
     findings.extend(validate_invoice(inv_data))
-    findings.extend(find_duplicates(db, doc_hash, inv_data, exclude_invoice_id=invoice.id))
+    findings.extend(find_duplicates(db, doc_hash, inv_data, exclude_invoice_id=invoice.id, owner_id=owner_id))
     recon_findings, recon_rows = reconcile_invoice(db, inv_data)
     findings.extend(recon_findings)
     findings.extend(einv.findings)

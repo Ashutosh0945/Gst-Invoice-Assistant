@@ -1,17 +1,14 @@
-dashboard/
-data/raw/
-data/inbox/
-data/staging/
-data/samples/
-data/layoutlm_dataset/
-models/
-ml/
-tests/
+# Vercel hosts only the website (Next.js). The Python API runs on Render.
+backend/
 scripts/
+tests/
+ml/
 sql/
+data/
+console/
+requirements*.txt
+Dockerfile*
 docker-compose.yml
-Dockerfile
-Dockerfile.ml
-requirements-ml.txt
+render.yaml
 pytest.ini
 *.db

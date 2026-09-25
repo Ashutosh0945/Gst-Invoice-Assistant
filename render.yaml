@@ -1,0 +1,28 @@
+# Render Blueprint: Render → New → Blueprint → pick this repository.
+# It creates the API service; you only paste in DATABASE_URL (from Neon/Supabase).
+services:
+  - type: web
+    name: munshi-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter            # "free" also works, but sleeps after 15 min idle (first request then takes ~1 min)
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # paste your Neon/Supabase connection string when prompted
+      - key: SESSION_SECRET
+        generateValue: true  # Render creates a long random value for you
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: CONSOLE_ENABLED
+        value: "true"
+      - key: API_KEY
+        generateValue: true  # the console website's server uses this; copy it into Vercel as CONSOLE_API_KEY
+      - key: LLM_ENABLED
+        value: "false"       # set "true" and add OPENROUTER_API_KEY for full AI conversation
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: ASSISTANT_MODEL
+        value: openai/gpt-4o-mini

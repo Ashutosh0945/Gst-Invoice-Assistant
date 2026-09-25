@@ -26,6 +26,8 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       EINVOICE_PUBLIC_KEY_PATHS: ${EINVOICE_PUBLIC_KEY_PATHS:-}
       ITC_SAME_LINE_PREFIXES: ${ITC_SAME_LINE_PREFIXES:-}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-openai/gpt-4o-mini}
     ports: ["8000:8000"]
     volumes: ["./data:/srv/data"]
     command: >
@@ -37,6 +39,7 @@ services:
     environment:
       BACKEND_URL: http://api:8000
     ports: ["3000:3000"]
+    # Brand settings are baked in at build time; set them in .env before `docker compose build`.
 
   worker:
     build: { context: ., dockerfile: Dockerfile.ml }

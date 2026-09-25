@@ -1,0 +1,60 @@
+{
+  "_note": "Tax rules as data, so they can be updated every Budget without code changes. Figures are for FY 2025-26 (AY 2026-27) as announced in Union Budget 2025. VERIFY against the Income-tax Department / CBIC before each new financial year.",
+  "financial_year": "2025-26",
+  "cess_rate": 4,
+  "surcharge_threshold": 5000000,
+  "regimes": {
+    "new": {
+      "label": "New regime",
+      "slabs": [[400000, 0], [800000, 5], [1200000, 10], [1600000, 15], [2000000, 20], [2400000, 25], [null, 30]],
+      "standard_deduction": 75000,
+      "rebate_limit": 1200000,
+      "rebate_max": 60000,
+      "marginal_relief": true,
+      "allowed_deductions": []
+    },
+    "old": {
+      "label": "Old regime",
+      "slabs": [[250000, 0], [500000, 5], [1000000, 20], [null, 30]],
+      "slabs_senior": [[300000, 0], [500000, 5], [1000000, 20], [null, 30]],
+      "slabs_super_senior": [[500000, 0], [1000000, 20], [null, 30]],
+      "standard_deduction": 50000,
+      "rebate_limit": 500000,
+      "rebate_max": 12500,
+      "marginal_relief": false,
+      "allowed_deductions": ["sec_80c", "sec_80d_self", "sec_80d_parents", "sec_80ccd_1b", "home_loan_interest", "hra_exempt", "sec_80tta"]
+    }
+  },
+  "deduction_caps": {
+    "sec_80c": {"label": "80C (PF, PPF, ELSS, LIC, tuition fees…)", "cap": 150000},
+    "sec_80d_self": {"label": "80D health insurance (self & family)", "cap": 25000, "cap_senior": 50000},
+    "sec_80d_parents": {"label": "80D health insurance (parents)", "cap": 25000, "cap_senior_parents": 50000},
+    "sec_80ccd_1b": {"label": "80CCD(1B) extra NPS", "cap": 50000},
+    "home_loan_interest": {"label": "24(b) home loan interest (self-occupied)", "cap": 200000},
+    "hra_exempt": {"label": "HRA exemption (as computed)", "cap": null},
+    "sec_80tta": {"label": "80TTA savings interest", "cap": 10000}
+  },
+  "gst_registration": {
+    "services_threshold": 2000000,
+    "services_threshold_special": 1000000,
+    "special_category_states_services": ["13", "14", "15", "16"],
+    "goods_threshold": 4000000,
+    "goods_threshold_20l_states": ["05", "11", "12", "17", "34", "36"],
+    "goods_threshold_10l_states": ["13", "14", "15", "16"],
+    "always_required": ["Inter-state supply of goods", "Selling goods through e-commerce marketplaces", "Casual taxable person"]
+  },
+  "presumptive": {
+    "44ADA": {"label": "Professionals (44ADA)", "limit": 5000000, "limit_if_mostly_digital": 7500000, "deemed_percent": 50},
+    "44AD": {"label": "Small business (44AD)", "limit": 20000000, "limit_if_mostly_digital": 30000000, "deemed_percent_digital": 6, "deemed_percent_cash": 8}
+  },
+  "advance_tax": {
+    "min_liability": 10000,
+    "instalments": [["06-15", 15], ["09-15", 45], ["12-15", 75], ["03-15", 100]],
+    "presumptive_single": ["03-15", 100]
+  },
+  "deadlines": {
+    "itr_non_audit": "07-31",
+    "gstr1_monthly_day": 11,
+    "gstr3b_monthly_day": 20
+  }
+}
