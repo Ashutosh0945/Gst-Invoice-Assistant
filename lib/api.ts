@@ -70,6 +70,7 @@ export interface InvoiceSummary {
   created_at: string;
   einvoice_status: string | null;
   gstr2b_status: string | null;
+  llm_explanation: string | null;
 }
 
 export interface Finding {

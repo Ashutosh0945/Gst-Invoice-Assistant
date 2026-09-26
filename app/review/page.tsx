@@ -13,7 +13,7 @@ export default async function ReviewQueuePage() {
       <Card title={`${invoices.length} waiting`}>
         {invoices.length === 0
           ? <Empty title="Nothing waiting on review" hint="New invoices that need a human decision will appear here." />
-          : <InvoiceTable rows={invoices} action="Review" />}
+          : <InvoiceTable rows={invoices} action="Review" showAiPreview />}
       </Card>
     </div>
   );

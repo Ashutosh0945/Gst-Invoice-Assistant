@@ -3,7 +3,7 @@ import type { InvoiceSummary } from "@/lib/api";
 import { formatDate, formatMoney, formatPercent } from "@/lib/api";
 import { EinvBadge, StatusBadge, TwoBBadge } from "@/components/badges";
 
-export function InvoiceTable({ rows, action }: { rows: InvoiceSummary[]; action?: string }) {
+export function InvoiceTable({ rows, action, showAiPreview }: { rows: InvoiceSummary[]; action?: string; showAiPreview?: boolean }) {
   return (
     <div className="overflow-x-auto -mx-3">
       <table className="tbl">
@@ -20,6 +20,12 @@ export function InvoiceTable({ rows, action }: { rows: InvoiceSummary[]; action?
                 <Link href={`/invoices/${i.id}`} className="font-semibold hover:text-accent-soft">
                   {i.invoice_number ?? i.source_filename}
                 </Link>
+                {showAiPreview && i.llm_explanation && (
+                  <div className="flex items-start gap-1 mt-1 max-w-[280px]">
+                    <span className="text-accent-soft shrink-0" title="AI summary">✦</span>
+                    <p className="text-xs text-ink-faint line-clamp-2">{i.llm_explanation}</p>
+                  </div>
+                )}
               </td>
               <td>
                 <div className="text-ink truncate max-w-[220px]">{i.vendor_name_raw ?? "—"}</div>

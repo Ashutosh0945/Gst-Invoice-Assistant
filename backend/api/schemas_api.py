@@ -80,6 +80,7 @@ class InvoiceSummaryOut(BaseModel):
     created_at: datetime
     einvoice_status: str | None = None
     gstr2b_status: str | None = None
+    llm_explanation: str | None = None
 
     model_config = {"from_attributes": True}
 
