@@ -15,8 +15,43 @@
 // this file is unaware of the distinction.
 function getBaseUrl(): string {
   if (typeof window !== "undefined") return ""; // browser: relative path is correct
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`; // same Vercel deployment
-  return process.env.BACKEND_URL || "http://localhost:8000"; // local SSR: hit FastAPI directly
+  return serverBaseCandidates()[0];
+}
+
+/** Every address the server could use to reach this site's API, best first. On Vercel the
+ *  per-deployment address (VERCEL_URL) is usually behind Vercel's login ("Deployment
+ *  Protection"), so the public addresses come first. */
+export function serverBaseCandidates(): string[] {
+  const list: string[] = [];
+  const add = (u?: string | null) => {
+    if (!u) return;
+    const v = (u.startsWith("http") ? u : `https://${u}`).replace(/\/$/, "");
+    if (!list.includes(v)) list.push(v);
+  };
+  add(process.env.SITE_URL?.trim());
+  if (process.env.VERCEL) {
+    if (process.env.VERCEL_ENV === "production") add(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+    add(process.env.VERCEL_BRANCH_URL);
+    add(process.env.VERCEL_URL);
+    add(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+  }
+  add(process.env.BACKEND_URL || "http://localhost:8000"); // local development
+  return list;
+}
+
+let workingBase: string | null = null;   // remembered per server instance once found
+
+/** Vercel's login wall answers with 401/403 and an HTML page; the API always answers JSON. */
+function blockedByLoginWall(res: Response): boolean {
+  return (res.status === 401 || res.status === 403) && !(res.headers.get("content-type") || "").includes("json");
+}
+
+// Preview deployments stay behind Vercel's login; if "Protection Bypass for Automation" is
+// enabled, Vercel provides this secret and server-side fetches can pass through.
+function serverHeaders(): Record<string, string> {
+  if (typeof window !== "undefined") return {};
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  return bypass ? { "x-vercel-protection-bypass": bypass } : {};
 }
 
 export type InvoiceStatus =
@@ -158,16 +193,67 @@ export interface Overview {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${getBaseUrl()}${path}`, {
+  const opts: RequestInit = {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+    headers: { "Content-Type": "application/json", ...serverHeaders(), ...(init?.headers || {}) },
     cache: "no-store",
-  });
+  };
+  let res: Response | null = null;
+  if (typeof window !== "undefined") {
+    res = await fetch(path, opts);
+  } else {
+    const bases = workingBase ? [workingBase, ...serverBaseCandidates().filter((b) => b !== workingBase)] : serverBaseCandidates();
+    let lastErr: unknown = null;
+    for (const base of bases) {
+      try {
+        const r = await fetch(`${base}${path}`, opts);
+        if (blockedByLoginWall(r)) { lastErr = new Error(`${r.status} blocked by Vercel login at ${base}`); continue; }
+        res = r;
+        workingBase = base;
+        break;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    if (!res) {
+      console.error(`[api] could not reach the API for ${path}:`, lastErr);
+      throw new Error(`503 API unreachable: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`);
+    }
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`${res.status} ${res.statusText}: ${text}`);
   }
   return res.json() as Promise<T>;
+}
+
+/** Used by the layout banner and the /status page: which API addresses work from the server. */
+let probeCache: { at: number; value: { ok: boolean; base: string | null;
+  checks: Array<{ base: string; result: string; ok: boolean }> } } | null = null;
+
+export async function probeApi(opts: { fresh?: boolean } = {}): Promise<{ ok: boolean; base: string | null;
+  checks: Array<{ base: string; result: string; ok: boolean }> }> {
+  // A good result is remembered for 5 minutes so pages don't pay for this check on every load.
+  if (!opts.fresh && probeCache && probeCache.value.ok && Date.now() - probeCache.at < 5 * 60_000) return probeCache.value;
+  const value = await runProbe();
+  probeCache = { at: Date.now(), value };
+  return value;
+}
+
+async function runProbe(): Promise<{ ok: boolean; base: string | null;
+  checks: Array<{ base: string; result: string; ok: boolean }> }> {
+  const checks: Array<{ base: string; result: string; ok: boolean }> = [];
+  for (const base of serverBaseCandidates()) {
+    try {
+      const r = await fetch(`${base}/api/v1/health`, { cache: "no-store", headers: serverHeaders() });
+      const ok = r.ok && (r.headers.get("content-type") || "").includes("json");
+      checks.push({ base, ok, result: ok ? "works" : blockedByLoginWall(r) ? `blocked by Vercel login (${r.status})` : `HTTP ${r.status}` });
+      if (ok) { workingBase = workingBase ?? base; return { ok: true, base, checks }; }
+    } catch (e) {
+      checks.push({ base, ok: false, result: `can't connect (${e instanceof Error ? e.message : "error"})` });
+    }
+  }
+  return { ok: false, base: null, checks };
 }
 
 export const api = {
@@ -184,7 +270,7 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     return fetch(`${getBaseUrl()}/api/v1/invoices`, { method: "POST", body: form }).then(async (res) => {
-      if (!res.ok) throw new Error(errorText(await res.text()));
+      if (!res.ok) throw new Error(errorText(await res.text(), res.status));
       return res.json() as Promise<InvoiceDetail>;
     });
   },
@@ -236,7 +322,7 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     return fetch(`${getBaseUrl()}/api/v1/gstr2b/import`, { method: "POST", body: form }).then(async (res) => {
-      if (!res.ok) throw new Error(errorText(await res.text()));
+      if (!res.ok) throw new Error(errorText(await res.text(), res.status));
       return res.json() as Promise<Gstr2bImport>;
     });
   },
@@ -252,7 +338,7 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     return fetch(`${getBaseUrl()}/api/v1/einvoice/verify-file`, { method: "POST", body: form }).then(async (res) => {
-      if (!res.ok) throw new Error(errorText(await res.text()));
+      if (!res.ok) throw new Error(errorText(await res.text(), res.status));
       return res.json() as Promise<EinvResult>;
     });
   },
@@ -277,13 +363,17 @@ export function formatPercent(v: string | null | undefined, digits = 0): string 
   return `${(n * 100).toFixed(digits)}%`;
 }
 
-function errorText(body: string): string {
+function errorText(body: string, status?: number): string {
+  // The API explains problems as JSON {"detail": "..."}. Anything else (a host's HTML
+  // error page, a bare "Internal Server Error") gets a plain-language message instead.
   try {
     const j = JSON.parse(body);
-    return typeof j.detail === "string" ? j.detail : body;
-  } catch {
-    return body || "The request failed.";
-  }
+    if (typeof j.detail === "string") return j.detail;
+  } catch { /* not JSON */ }
+  if (status === 413) return "That file is too large. Please use a file under 4 MB.";
+  if (status === 504) return "The server took too long to read this invoice. Please try again.";
+  if (status && status >= 500) return "The server hit an error while processing this invoice. Please try again; if it keeps happening, open /api/v1/health/database on your site to check the database.";
+  return body && body.length < 200 && !body.trimStart().startsWith("<") ? body : "The request failed. Please try again.";
 }
 
 export function formatCompact(v: string | number | null | undefined): string {

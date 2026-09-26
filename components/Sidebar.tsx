@@ -45,7 +45,11 @@ function isActive(pathname: string, href: string) {
 }
 
 export function Sidebar() {
-  const pathname = usePathname() || "/";
+  const actualPath = usePathname() || "/";
+  // Light up the clicked item immediately, before the next page has finished loading.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => setPendingHref(null), [actualPath]);
+  const pathname = pendingHref ?? actualPath;
   const [open, setOpen] = useState<Record<string, boolean>>({ work: true, compliance: true, insights: true });
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -77,7 +81,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-4 pb-4" aria-label="Main">
-          <NavLink item={{ href: "/", label: "Overview", icon: LayoutGrid }} active={pathname === "/"} />
+          <NavLink item={{ href: "/", label: "Overview", icon: LayoutGrid }} active={pathname === "/"} onNavigate={setPendingHref} />
           {GROUPS.map((g) => (
             <div key={g.key}>
               <button
@@ -94,7 +98,7 @@ export function Sidebar() {
               {open[g.key] && (
                 <ul className="mt-1.5 space-y-0.5">
                   {g.items.map((it) => (
-                    <li key={it.href}><NavLink item={it} active={isActive(pathname, it.href)} /></li>
+                    <li key={it.href}><NavLink item={it} active={isActive(pathname, it.href)} onNavigate={setPendingHref} /></li>
                   ))}
                 </ul>
               )}
@@ -116,12 +120,13 @@ export function Sidebar() {
   );
 }
 
-function NavLink({ item, active }: { item: Item; active: boolean }) {
+function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; onNavigate?: (href: string) => void }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
+      onClick={() => onNavigate?.(item.href)}
       className={`flex items-center gap-3 px-3 py-[7px] rounded-xl text-[14px] transition ${
         active ? "bg-base shadow-neu-in text-white" : "text-ink-soft hover:text-white"
       }`}

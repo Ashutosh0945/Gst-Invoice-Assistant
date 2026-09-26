@@ -13,8 +13,10 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
   let inv: InvoiceDetail;
   try {
     inv = await api.getInvoice(params.id);
-  } catch {
-    notFound();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.startsWith("404")) notFound();          // the invoice really doesn't exist
+    return <LoadError message={msg} />;              // anything else: say what went wrong
   }
   const itc = inv.itc;
 
@@ -183,4 +185,23 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
 
 function rank(s: string) {
   return s === "ERROR" ? 0 : s === "WARNING" ? 1 : 2;
+}
+
+
+function LoadError({ message }: { message: string }) {
+  const status = Number(message.slice(0, 3));
+  const hint = status === 401 || status === 403
+    ? "The site's server was blocked from reading its own API (Vercel Deployment Protection). Set SITE_URL in Vercel to your site address, e.g. https://gst-invoice-assistant.vercel.app, then redeploy."
+    : status >= 500
+      ? "The API hit an error. Open /api/v1/health/database on this site to check the database."
+      : "Please refresh the page. If this keeps happening, check the Vercel logs for this request.";
+  return (
+    <div className="pt-10 max-w-2xl">
+      <Card title="Couldn't load this invoice">
+        <p className="text-sm text-ink-soft">{hint}</p>
+        <p className="text-xs text-ink-faint mt-3 break-all">Technical detail: {message.replace(/<[^>]+>/g, " ").slice(0, 200)}</p>
+        <Link href="/invoices" className="btn mt-5">Back to all invoices</Link>
+      </Card>
+    </div>
+  );
 }

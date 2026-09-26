@@ -26,7 +26,7 @@ export const StatusBadge = make({
 });
 
 export const ItcBadge = make({
-  ELIGIBLE: ["good", "Eligible"], PARTIALLY_ELIGIBLE: ["info", "Partly eligible"], AWAITING_2B: ["accent", "Awaiting 2B"],
+  ELIGIBLE: ["good", "Eligible"], PARTIALLY_ELIGIBLE: ["info", "Partly eligible"], AWAITING_2B: ["accent", "Awaiting GSTR-2B"],
   NEEDS_REVIEW: ["warn", "Needs review"], NOT_IN_2B: ["bad", "Not in 2B"], REVERSAL_DUE: ["bad", "Reversal due"],
   BLOCKED: ["muted", "Blocked"], LAPSED: ["bad", "Lapsed"], NOT_APPLICABLE: ["muted", "Not applicable"],
 });

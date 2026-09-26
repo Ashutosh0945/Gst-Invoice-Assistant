@@ -90,7 +90,16 @@ export default function UploadPage() {
               <div key={l} className="neu-inset p-3.5"><div className="text-xs text-ink-soft">{l}</div><div className="font-bold tabular mt-0.5">{v}</div></div>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2 mt-4"><ItcBadge value={result.itc?.status} /><EinvBadge value={result.einvoice_status} /></div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-sm">
+            <span className="flex items-center gap-2 text-ink-soft">Invoice: <StatusBadge value={result.status} /></span>
+            <span className="flex items-center gap-2 text-ink-soft">Tax credit: <ItcBadge value={result.itc?.status} /></span>
+            <span className="flex items-center gap-2 text-ink-soft">E-invoice: <EinvBadge value={result.einvoice_status} /></span>
+          </div>
+          {result.itc?.status === "AWAITING_2B" && (
+            <p className="text-xs text-ink-faint mt-2">
+              &ldquo;Awaiting GSTR-2B&rdquo; is normal: tax credit is confirmed once you import the month&apos;s GSTR-2B from the GST portal (GSTR-2B match page).
+            </p>
+          )}
           {result.findings.filter((f) => f.severity !== "INFO").length > 0 && (
             <ul className="mt-4 space-y-2">
               {result.findings.filter((f) => f.severity !== "INFO").map((f) => (
