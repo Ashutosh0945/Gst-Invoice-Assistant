@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ProgrammingError, SQLAlchemyError
 
 from backend.db.base import DatabaseConfigError
+from backend.config import get_settings
 
 from backend.api.routes import router
 from backend.api.routes_compliance import router as compliance_router
@@ -138,6 +139,56 @@ def health_database():
         return JSONResponse(status_code=503, content={
             "database": "unreachable", "error": f"{type(exc).__name__}: {str(exc).splitlines()[0][:200]}",
             "hint": "Check DATABASE_URL in your Vercel environment variables."})
+
+
+@app.get("/api/v1/health/llm")
+def health_llm():
+    """Open this in a browser to check the AI explanation layer in one glance.
+    Makes one real (tiny) call to OpenRouter so a bad key, an unpaid model, or
+    a wrong model name shows up here directly -- instead of silently producing
+    no AI text on invoices, which is what the pipeline itself does on purpose
+    (an LLM failure should never block processing an invoice)."""
+    import httpx
+
+    settings = get_settings()
+    if not settings.llm_enabled:
+        return {"llm": "disabled", "hint": "Set LLM_ENABLED=true in your environment variables to turn this on."}
+    if not settings.openrouter_api_key:
+        return JSONResponse(status_code=503, content={
+            "llm": "not configured",
+            "hint": "Set OPENROUTER_API_KEY in your Vercel environment variables, then redeploy."})
+
+    try:
+        resp = httpx.post(
+            f"{settings.openrouter_base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {settings.openrouter_api_key}", "Content-Type": "application/json"},
+            json={"model": settings.openrouter_model,
+                  "messages": [{"role": "user", "content": "Reply with exactly: OK"}], "max_tokens": 5},
+            timeout=20,
+        )
+    except httpx.HTTPError as exc:
+        return JSONResponse(status_code=503, content={
+            "llm": "unreachable", "model": settings.openrouter_model,
+            "error": f"{type(exc).__name__}: {exc}",
+            "hint": "OpenRouter didn't respond. Check OPENROUTER_BASE_URL and that Vercel can reach the internet."})
+
+    if resp.status_code == 200:
+        reply = resp.json()["choices"][0]["message"]["content"].strip()
+        return {"llm": "working", "model": settings.openrouter_model, "sample_reply": reply}
+
+    body = resp.text[:300]
+    hints = {
+        401: "OPENROUTER_API_KEY is invalid or was typed/pasted incorrectly. Create a fresh key at openrouter.ai/keys.",
+        402: ("This model needs OpenRouter credit and your account has none. Either add a few dollars of credit at "
+              "openrouter.ai/credits, or switch OPENROUTER_MODEL to a free one such as "
+              "'deepseek/deepseek-r1:free' or 'google/gemini-2.0-flash-exp:free', then redeploy."),
+        404: f"OPENROUTER_MODEL ('{settings.openrouter_model}') isn't a valid model name. Check the exact "
+             "spelling at openrouter.ai/models.",
+        429: "Rate limited by OpenRouter. Wait a moment and try again.",
+    }
+    return JSONResponse(status_code=503, content={
+        "llm": "error", "model": settings.openrouter_model, "status_code": resp.status_code,
+        "response": body, "hint": hints.get(resp.status_code, "See the response body above for details.")})
 
 
 _REGIONS = {"ap-south-1": ("Mumbai", "bom1"), "ap-southeast-1": ("Singapore", "sin1"),
