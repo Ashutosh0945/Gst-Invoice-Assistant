@@ -98,7 +98,15 @@ def process_invoice_file(db: Session, path: str | Path) -> Invoice:
     invoice.confidence_score = confidence
     invoice.status = status.value
 
-    explanation = explain_findings(inv_data, findings)
+    # The LLM layer is a UX enhancement, never a dependency: no matter what
+    # goes wrong inside it (a library bug, an unexpected response shape from
+    # a model we've never seen before, a future change on OpenRouter's side),
+    # invoice processing itself must still complete and commit successfully.
+    try:
+        explanation = explain_findings(inv_data, findings)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("LLM explanation raised an unexpected error (invoice processing continues): %s", exc)
+        explanation = None
     if explanation:
         invoice.llm_explanation = explanation
 

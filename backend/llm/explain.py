@@ -72,8 +72,18 @@ def explain_findings(inv: InvoiceData, findings: list[Finding]) -> str | None:
             )
             resp.raise_for_status()
             data = resp.json()
-            return data["choices"][0]["message"]["content"].strip()
-        except (httpx.HTTPError, KeyError, IndexError) as exc:
+            message = data["choices"][0]["message"]
+            # Some free/reasoning models (e.g. DeepSeek R1 routed via
+            # "openrouter/free") put their output in a separate "reasoning"
+            # field and leave "content" as None -- fall back to that rather
+            # than crashing on None.strip(). If both are empty, treat it as
+            # a failed attempt and retry, same as any other bad response.
+            content = message.get("content") or message.get("reasoning") or ""
+            content = content.strip()
+            if not content:
+                raise ValueError("LLM returned an empty response")
+            return content
+        except (httpx.HTTPError, KeyError, IndexError, AttributeError, TypeError, ValueError) as exc:
             last_error = exc
             logger.warning("LLM explanation attempt %d/%d failed: %s", attempt + 1, settings.llm_max_retries, exc)
             time.sleep(min(2 ** attempt, 8))
