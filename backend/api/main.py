@@ -173,7 +173,19 @@ def health_llm():
             "hint": "OpenRouter didn't respond. Check OPENROUTER_BASE_URL and that Vercel can reach the internet."})
 
     if resp.status_code == 200:
-        reply = resp.json()["choices"][0]["message"]["content"].strip()
+        try:
+            message = resp.json()["choices"][0]["message"]
+            reply = (message.get("content") or message.get("reasoning") or "").strip()
+        except (KeyError, IndexError, AttributeError, TypeError) as exc:
+            return JSONResponse(status_code=503, content={
+                "llm": "error", "model": settings.openrouter_model,
+                "error": f"Got a 200 response but couldn't read it: {type(exc).__name__}: {exc}",
+                "raw_response": resp.text[:300]})
+        if not reply:
+            return JSONResponse(status_code=503, content={
+                "llm": "error", "model": settings.openrouter_model,
+                "error": "Model returned an empty response (no content or reasoning text).",
+                "hint": "Try a different OPENROUTER_MODEL, or retry -- this can happen occasionally with free models."})
         return {"llm": "working", "model": settings.openrouter_model, "sample_reply": reply}
 
     body = resp.text[:300]
