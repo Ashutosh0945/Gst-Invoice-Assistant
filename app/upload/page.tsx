@@ -71,6 +71,7 @@ export default function UploadPage() {
       const res = await fetch("/api/v1/capture/analyze", { method: "POST", body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Couldn't analyse the photo.");
+      if (data.capture_failed) { setCap(null); setError(`${data.message}`); return; }
       setCap(data as Capture); setView("enhanced");
     } catch (e) { setError(e instanceof Error ? `${e.message} You can still upload the original.` : "Analysis failed."); }
     finally { setCapBusy(false); }

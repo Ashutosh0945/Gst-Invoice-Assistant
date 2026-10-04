@@ -146,3 +146,26 @@ def test_audit_failure_never_breaks_requests(db, monkeypatch):
 def test_ip_masking():
     from backend.security.audit import mask_ip
     assert mask_ip("103.21.244.17") == "103.21.x.x" and mask_ip("2405:201:abcd::1").startswith("2405:201")
+
+
+def test_flat_houghlines_shape_from_other_opencv_builds(doc, monkeypatch):
+    """Regression: some OpenCV builds return HoughLinesP as (N, 4) instead of (N, 1, 4), which crashed with
+    'cannot unpack non-iterable numpy.int32 object' when uploading a photo."""
+    real = cv2.HoughLinesP
+    monkeypatch.setattr(cv2, "HoughLinesP", lambda *a, **k: (lambda r: None if r is None else r.reshape(-1, 4))(real(*a, **k)))
+    r = optimize(_on_desk(doc))
+    assert r.quality["verdict"] in ("good", "fair")
+
+
+def test_photo_upload_never_fails_because_of_optimisation(db, doc, monkeypatch):
+    import backend.capture.optimize as O
+    monkeypatch.setattr(O, "optimize", lambda img: (_ for _ in ()).throw(TypeError("simulated OpenCV failure")))
+    c = TestClient(app)
+    jpg = cv2.imencode(".jpg", _on_desk(doc))[1].tobytes()
+    r = c.post("/api/v1/invoices?optimize=true", files={"file": ("p.jpg", jpg, "image/jpeg")})
+    assert r.status_code == 201
+    from backend.db.models import AuditLog
+    logs = {x.action: x.details for x in db.query(AuditLog).filter(AuditLog.invoice_id == r.json()["id"])}
+    assert "CAPTURE_FAILED" in logs and "original photo used" in logs["CAPTURE_FAILED"]["fallback"]
+    a = c.post("/api/v1/capture/analyze", files={"file": ("p.jpg", jpg, "image/jpeg")})
+    assert a.status_code == 200 and a.json()["capture_failed"] is True

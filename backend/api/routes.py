@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import shutil
 import tempfile
 from pathlib import Path
@@ -35,7 +37,7 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         shutil.copyfileobj(file.file, tmp)
         tmp_path = Path(tmp.name)
-    work_path, capture = tmp_path, None
+    work_path, capture, capture_error = tmp_path, None, None
     try:
         if optimize and suffix in IMAGE_SUFFIXES:
             import cv2
@@ -43,10 +45,21 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
             from backend.capture.optimize import optimize as run_capture
             img = cv2.imread(str(tmp_path))
             if img is not None:
-                capture = run_capture(img)
-                work_path = tmp_path.with_name(tmp_path.stem + "_ocr_ready.png")
-                cv2.imwrite(str(work_path), capture.ocr_ready)
+                try:
+                    capture = run_capture(img)
+                    work_path = tmp_path.with_name(tmp_path.stem + "_ocr_ready.png")
+                    cv2.imwrite(str(work_path), capture.ocr_ready)
+                except Exception as exc:  # noqa: BLE001 - optimisation is a bonus; never fail the upload over it
+                    logging.getLogger(__name__).exception("Capture optimisation failed; using the original photo")
+                    capture_error = f"{type(exc).__name__}: {str(exc)[:200]}"
+                    work_path, capture = tmp_path, None
         invoice = process_invoice_file(db, work_path)
+        if capture_error is not None:
+            from backend.services.audit_service import log_action
+            log_action(db, invoice.id, actor="system", action="CAPTURE_FAILED",
+                       details={"error": capture_error, "fallback": "original photo used", "original_filename": file.filename})
+            db.commit()
+            db.refresh(invoice)
         if capture is not None:
             from backend.services.audit_service import log_action
             log_action(db, invoice.id, actor="system", action="CAPTURE_OPTIMIZED",
@@ -76,7 +89,16 @@ async def capture_analyze(file: UploadFile):
     img = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     if img is None:
         raise HTTPException(422, "That file isn't a readable image.")
-    r = run_capture(img)
+    try:
+        r = run_capture(img)
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).exception("Capture analysis failed")
+        from backend.ocr.engine import engine_name
+        return {"capture_failed": True, "message": "Couldn't optimise this photo; you can still upload the original.",
+                "error": f"{type(exc).__name__}", "steps": [], "enhanced": None, "ocr_ready": None, "ocr_ready_same_as_enhanced": True,
+                "quality": {"verdict": "fair", "score": None, "warnings": [{"code": "not_analysed", "severity": "low",
+                            "message": "Photo optimisation failed, so quality couldn't be checked. The original photo will be used."}], "metrics": {}},
+                "ocr_engine": engine_name(), "ocr_available": engine_name() is not None}
     b64 = lambda im: "data:image/jpeg;base64," + base64.b64encode(to_jpeg(im)).decode()  # noqa: E731
     same = r.ocr_ready is r.enhanced
     from backend.ocr.engine import engine_name

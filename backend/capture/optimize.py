@@ -52,7 +52,7 @@ def detect_document(img: np.ndarray) -> tuple[np.ndarray | None, float]:
     bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
     edges = cv2.dilate(cv2.Canny(gray, 40, 120), np.ones((5, 5), np.uint8), iterations=2)
     for mask in (bright, edges):
-        cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]   # OpenCV 3 returns 3 values, 4+ returns 2
         for c in sorted(cnts, key=cv2.contourArea, reverse=True)[:5]:
             area = cv2.contourArea(c) / (gray.shape[0] * gray.shape[1])
             if area < 0.2:
@@ -109,7 +109,8 @@ def deskew_angle(gray: np.ndarray) -> float:
     lines = cv2.HoughLinesP(mask, 1, np.pi / 720, threshold=120, minLineLength=gray.shape[1] // 6, maxLineGap=10)
     if lines is None:
         return 0.0
-    angs = [np.degrees(np.arctan2(y2 - y1, x2 - x1)) for x1, y1, x2, y2 in lines[:, 0]]
+    # OpenCV builds differ: HoughLinesP may return shape (N, 1, 4) or (N, 4). reshape handles both.
+    angs = [np.degrees(np.arctan2(y2 - y1, x2 - x1)) for x1, y1, x2, y2 in np.asarray(lines).reshape(-1, 4)]
     angs = [a for a in angs if abs(a) <= 15]
     return float(np.median(angs)) if len(angs) >= 3 else 0.0
 
