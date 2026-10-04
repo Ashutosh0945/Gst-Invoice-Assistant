@@ -15,7 +15,7 @@ export function PwaManager() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => undefined);
     const refresh = () => listQueue().then((q) => setQueued(q.length)).catch(() => undefined);
     const sync = async () => {
       const n = await processQueue((item, num) => notify(`Uploaded ${num || item.name}`, "Your offline invoice has been processed.")).catch(() => 0);

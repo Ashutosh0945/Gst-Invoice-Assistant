@@ -28,6 +28,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="theme-color" content="#1E1D35" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="GST Desk" />
       </head>
       <body className="font-sans antialiased">
         <PwaManager />
