@@ -70,7 +70,7 @@ export default function Assistant() {
       <div className="pt-3 pb-2">
         <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1">
           {suggestions.map((s) => (
-            <button key={s} className="shrink-0 px-3.5 py-2 rounded-xl text-sm bg-base shadow-neu-sm text-ink-soft hover:text-white" onClick={() => send(s)} disabled={busy}>{s}</button>
+            <button key={s} className="shrink-0 px-3.5 py-2 rounded-xl text-sm bg-base shadow-neu-sm text-ink-soft hover:text-ink-strong" onClick={() => send(s)} disabled={busy}>{s}</button>
           ))}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="flex gap-2">

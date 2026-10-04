@@ -72,7 +72,7 @@ export default function Home() {
               <ul className="space-y-3">
                 {data.recent_bills.map((b) => (
                   <li key={b.id}>
-                    <Link href={`/app/bills/${b.id}`} className="flex items-center gap-3 neu-tile p-3.5 hover:text-white">
+                    <Link href={`/app/bills/${b.id}`} className="flex items-center gap-3 neu-tile p-3.5 hover:text-ink-strong">
                       <div className="icon-tile w-10 h-10 shrink-0"><Receipt className="w-4 h-4 text-accent-soft" aria-hidden /></div>
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold truncate">{b.vendor || b.file}</div>
@@ -92,7 +92,7 @@ export default function Home() {
             <Card title="Warranties ending soon">
               <ul className="space-y-2">
                 {s.warranties_expiring.map((w) => (
-                  <li key={w.bill_id}><Link href={`/app/bills/${w.bill_id}`} className="flex items-center gap-2 text-sm hover:text-white">
+                  <li key={w.bill_id}><Link href={`/app/bills/${w.bill_id}`} className="flex items-center gap-2 text-sm hover:text-ink-strong">
                     <AlertTriangle className="w-4 h-4 text-warn" aria-hidden /> {w.vendor ?? "Bill"} — ends {fmtDate(w.until)}</Link></li>
                 ))}
               </ul>

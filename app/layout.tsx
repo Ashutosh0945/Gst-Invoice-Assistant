@@ -3,6 +3,8 @@ import "@fontsource-variable/plus-jakarta-sans";  // self-hosted: no Google Font
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
+import { themeBootScript } from "@/components/ThemeToggle";
+import { PwaManager } from "@/components/PwaManager";
 import Link from "next/link";
 import { probeApi } from "@/lib/api";
 
@@ -18,8 +20,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Say so loudly instead.
   const probe = await probeApi().catch(() => ({ ok: false, base: null, checks: [] }));
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="theme-color" content="#1E1D35" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="font-sans antialiased">
+        <PwaManager />
         <div className="flex min-h-screen">
           <Sidebar />
           <div className="flex-1 min-w-0 flex flex-col">
@@ -28,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {!probe.ok && (
                 <div role="alert" className="mt-6 rounded-2xl border border-bad/40 bg-bad/10 px-5 py-4 text-sm">
                   <b className="text-bad">This site can&apos;t load its data right now,</b> so lists below may look empty even
-                  though your invoices are saved. <Link href="/status" className="underline text-white">See what&apos;s wrong</Link>
+                  though your invoices are saved. <Link href="/status" className="underline text-ink-strong">See what&apos;s wrong</Link>
                 </div>
               )}
               {children}

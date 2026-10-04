@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     llm_enabled: bool = True
     llm_timeout_s: float = 45.0
     llm_max_retries: int = 3
+    ai_timeout_s: float = 25.0          # interactive AI features: one attempt, must fit Vercel's 60 s limit
 
     @property
     def raw_dir(self) -> Path:

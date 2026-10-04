@@ -24,17 +24,65 @@ from backend.services.review_service import approve_invoice, correct_invoice, re
 router = APIRouter(dependencies=[Depends(require_api_key)])
 
 
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
+
+
 @router.post("/invoices", response_model=InvoiceDetailOut, status_code=201)
-def upload_invoice(file: UploadFile, db: Session = Depends(get_db)):
-    suffix = Path(file.filename or "invoice").suffix or ".pdf"
+def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depends(get_db)):
+    """optimize=true (camera photos): the photo goes through the capture pipeline first and the
+    OCR-ready image -- not the raw photo -- is passed to the existing OCR/extraction pipeline."""
+    suffix = (Path(file.filename or "invoice").suffix or ".pdf").lower()
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         shutil.copyfileobj(file.file, tmp)
         tmp_path = Path(tmp.name)
+    work_path, capture = tmp_path, None
     try:
-        invoice = process_invoice_file(db, tmp_path)
+        if optimize and suffix in IMAGE_SUFFIXES:
+            import cv2
+
+            from backend.capture.optimize import optimize as run_capture
+            img = cv2.imread(str(tmp_path))
+            if img is not None:
+                capture = run_capture(img)
+                work_path = tmp_path.with_name(tmp_path.stem + "_ocr_ready.png")
+                cv2.imwrite(str(work_path), capture.ocr_ready)
+        invoice = process_invoice_file(db, work_path)
+        if capture is not None:
+            from backend.services.audit_service import log_action
+            log_action(db, invoice.id, actor="system", action="CAPTURE_OPTIMIZED",
+                       details={"steps": capture.steps, "quality": capture.quality, "original_filename": file.filename})
+            db.commit()
+            db.refresh(invoice)
     finally:
         tmp_path.unlink(missing_ok=True)
+        if work_path != tmp_path:
+            work_path.unlink(missing_ok=True)
     return invoice
+
+
+@router.post("/capture/analyze")
+async def capture_analyze(file: UploadFile):
+    """Preview only: runs the capture pipeline and returns the quality report plus the enhanced and
+    OCR-ready images. Nothing is stored; the caller decides whether to upload (Retake / Use anyway)."""
+    import base64
+
+    import cv2
+    import numpy as np
+
+    from backend.capture.optimize import optimize as run_capture, to_jpeg
+    raw = await file.read()
+    if len(raw) > 15 * 1024 * 1024:
+        raise HTTPException(413, "Photo is larger than 15 MB.")
+    img = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
+    if img is None:
+        raise HTTPException(422, "That file isn't a readable image.")
+    r = run_capture(img)
+    b64 = lambda im: "data:image/jpeg;base64," + base64.b64encode(to_jpeg(im)).decode()  # noqa: E731
+    same = r.ocr_ready is r.enhanced
+    from backend.ocr.engine import engine_name
+    return {"steps": r.steps, "quality": r.quality, "enhanced": b64(r.enhanced),
+            "ocr_ready": None if same else b64(r.ocr_ready), "ocr_ready_same_as_enhanced": same,
+            "ocr_engine": engine_name(), "ocr_available": engine_name() is not None}
 
 
 @router.get("/invoices", response_model=list[InvoiceSummaryOut])

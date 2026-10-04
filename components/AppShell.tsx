@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="flex-1 space-y-1" aria-label="Main">
             {items.map((n) => (
               <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${active(n.href) ? "bg-base shadow-neu-in text-white" : "text-ink-soft hover:text-white"}`}>
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${active(n.href) ? "bg-base shadow-neu-in text-ink-strong" : "text-ink-soft hover:text-ink-strong"}`}>
                 <n.icon className={`w-[18px] h-[18px] ${active(n.href) ? "text-accent-soft" : ""}`} aria-hidden />{n.label}
               </Link>
             ))}
@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="text-sm font-semibold truncate">{me.name}</div>
               <div className="text-xs text-ink-faint capitalize">{me.profile_type === "business" ? "Business" : me.profile_type}</div>
             </div>
-            <button aria-label="Sign out" className="text-ink-faint hover:text-white"
+            <button aria-label="Sign out" className="text-ink-faint hover:text-ink-strong"
               onClick={async () => { await app.logout().catch(() => undefined); router.replace("/login"); }}>
               <LogOut className="w-4 h-4" />
             </button>
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           style={{ gridTemplateColumns: `repeat(${items.length - 1}, 1fr)`, paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="Main">
           {items.filter((n) => n.href !== "/app/settings").map((n) => (
             <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
-              className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${active(n.href) ? "text-white" : "text-ink-faint"}`}>
+              className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${active(n.href) ? "text-ink-strong" : "text-ink-faint"}`}>
               <span className={`w-10 h-8 grid place-items-center rounded-xl ${active(n.href) ? "bg-base shadow-neu-in" : ""}`}>
                 <n.icon className={`w-5 h-5 ${active(n.href) ? "text-accent-soft" : ""}`} aria-hidden />
               </span>{n.label}

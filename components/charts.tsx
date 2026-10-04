@@ -22,8 +22,8 @@ export function StackedBars({ data, series, height = 240, format }: {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Stacked bar chart">
       {[0, 0.25, 0.5, 0.75, 1].map((t) => (
         <g key={t}>
-          <line x1={padL} x2={W} y1={y(nice * t)} y2={y(nice * t)} stroke="#2C2B48" strokeDasharray="3 5" />
-          <text x={padL - 8} y={y(nice * t)} textAnchor="end" dominantBaseline="middle" fontSize="11" fill="#6F6E8C">
+          <line x1={padL} x2={W} y1={y(nice * t)} y2={y(nice * t)} className="stroke-base-line" strokeDasharray="3 5" />
+          <text x={padL - 8} y={y(nice * t)} textAnchor="end" dominantBaseline="middle" fontSize="11" className="fill-ink-faint">
             {format(nice * t)}
           </text>
         </g>
@@ -39,12 +39,12 @@ export function StackedBars({ data, series, height = 240, format }: {
               const y0 = y(acc), y1 = y(acc + v);
               acc += v;
               return (
-                <rect key={s.key} x={cx - bw / 2} y={y1} width={bw} height={Math.max(1, y0 - y1)} rx={4} fill={s.color}>
+                <rect key={s.key} x={cx - bw / 2} y={y1} width={bw} height={Math.max(1, y0 - y1)} rx={4} style={{ fill: s.color }}>
                   <title>{`${d.label}: ${s.label} ${format(v)}`}</title>
                 </rect>
               );
             })}
-            <text x={cx} y={H - 8} textAnchor="middle" fontSize="11" fill="#A9A8C3">{String(d.label)}</text>
+            <text x={cx} y={H - 8} textAnchor="middle" fontSize="11" className="fill-ink-soft">{String(d.label)}</text>
           </g>
         );
       })}
@@ -60,11 +60,11 @@ export function Donut({ segments, center, sub, size = 180 }: {
   let offset = 0;
   return (
     <svg viewBox="0 0 180 180" width={size} height={size} role="img" aria-label={`${center} ${sub ?? ""}`}>
-      <circle cx="90" cy="90" r={r} fill="none" stroke="#1A1930" strokeWidth={sw} />
+      <circle cx="90" cy="90" r={r} fill="none" className="stroke-base-deep" strokeWidth={sw} />
       {total > 0 && segments.map((s) => {
         const len = (s.value / total) * circ;
         const el = (
-          <circle key={s.label} cx="90" cy="90" r={r} fill="none" stroke={s.color} strokeWidth={sw}
+          <circle key={s.label} cx="90" cy="90" r={r} fill="none" style={{ stroke: s.color }} strokeWidth={sw}
             strokeDasharray={`${Math.max(0, len - 3)} ${circ}`} strokeDashoffset={-offset}
             transform="rotate(-90 90 90)" strokeLinecap="round">
             <title>{`${s.label}: ${s.value}`}</title>
@@ -73,8 +73,8 @@ export function Donut({ segments, center, sub, size = 180 }: {
         offset += len;
         return el;
       })}
-      <text x="90" y="86" textAnchor="middle" fontSize="26" fontWeight="800" fill="#ECECF4">{center}</text>
-      {sub && <text x="90" y="108" textAnchor="middle" fontSize="11" fill="#A9A8C3">{sub}</text>}
+      <text x="90" y="86" textAnchor="middle" fontSize="26" fontWeight="800" className="fill-ink">{center}</text>
+      {sub && <text x="90" y="108" textAnchor="middle" fontSize="11" className="fill-ink-soft">{sub}</text>}
     </svg>
   );
 }

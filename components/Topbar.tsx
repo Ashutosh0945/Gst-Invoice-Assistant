@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Bell, PanelLeft, RefreshCw, Search, Upload } from "lucide-react";
 
@@ -44,6 +45,7 @@ export function Topbar() {
           <kbd className="hidden sm:block text-[11px] text-ink-faint bg-base px-1.5 py-0.5 rounded-md shadow-neu-sm">⌘K</kbd>
         </form>
         <div className="flex-1" />
+        <ThemeToggle />
         <Link href="/upload" className="btn-primary hidden sm:inline-flex">
           <Upload className="w-4 h-4" aria-hidden /> Upload
         </Link>

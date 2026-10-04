@@ -29,7 +29,7 @@ export default function BillPage() {
 
   return (
     <div>
-      <Link href="/app/bills" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-white mt-6"><ArrowLeft className="w-4 h-4" aria-hidden /> Bills</Link>
+      <Link href="/app/bills" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink-strong mt-6"><ArrowLeft className="w-4 h-4" aria-hidden /> Bills</Link>
       <header className="pt-4 pb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-tight">{b.vendor || b.file}</h1>

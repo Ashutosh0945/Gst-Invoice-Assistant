@@ -5,13 +5,23 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BadgeIndianRupee, BarChart3, Brain, ChevronDown, Copy, FileSearch, FileStack, GitCompareArrows,
-  LayoutGrid, ListChecks, QrCode, ShieldCheck, Sparkles, Store, Upload, type LucideIcon,
-} from "lucide-react";
+  LayoutGrid, ListChecks, QrCode, ShieldCheck, Sparkles, Store, Upload, type LucideIcon, Bot, Siren, FileBarChart, TrendingUp, Settings2 } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon };
 type Group = { key: string; label: string; icon: LucideIcon; tone: string; items: Item[] };
 
 const GROUPS: Group[] = [
+  {
+    key: "ai", label: "AI assistant", icon: Bot, tone: "bg-accent/90",
+    items: [
+      { href: "/copilot", label: "AI Copilot", icon: Bot },
+      { href: "/risk", label: "Risk Center", icon: Siren },
+      { href: "/reports", label: "Reports", icon: FileBarChart },
+      { href: "/forecast", label: "Forecast & what-if", icon: TrendingUp },
+      { href: "/security", label: "Security & Compliance", icon: ShieldCheck },
+      { href: "/settings", label: "Settings", icon: Settings2 },
+    ],
+  },
   {
     key: "work", label: "Invoices", icon: FileStack, tone: "bg-accent/90",
     items: [
@@ -50,7 +60,7 @@ export function Sidebar() {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => setPendingHref(null), [actualPath]);
   const pathname = pendingHref ?? actualPath;
-  const [open, setOpen] = useState<Record<string, boolean>>({ work: true, compliance: true, insights: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ ai: true, work: true, compliance: true, insights: true });
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -72,7 +82,7 @@ export function Sidebar() {
       >
         <div className="flex items-center gap-3 px-5 pt-6 pb-5">
           <div className="w-12 h-12 rounded-2xl bg-accent grid place-items-center shadow-glow">
-            <Sparkles className="w-6 h-6 text-white" aria-hidden />
+            <Sparkles className="w-6 h-6 text-ink-strong" aria-hidden />
           </div>
           <div>
             <div className="text-lg font-bold leading-tight">GST Desk</div>
@@ -90,7 +100,7 @@ export function Sidebar() {
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-2xl bg-base shadow-neu-sm"
               >
                 <span className={`w-8 h-8 rounded-full grid place-items-center ${g.tone}`}>
-                  <g.icon className="w-4 h-4 text-white" aria-hidden />
+                  <g.icon className="w-4 h-4 text-ink-strong" aria-hidden />
                 </span>
                 <span className="label flex-1 text-left">{g.label.toUpperCase()}</span>
                 <ChevronDown className={`w-4 h-4 text-ink-faint transition-transform ${open[g.key] ? "" : "-rotate-90"}`} />
@@ -128,7 +138,7 @@ function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; on
       aria-current={active ? "page" : undefined}
       onClick={() => onNavigate?.(item.href)}
       className={`flex items-center gap-3 px-3 py-[7px] rounded-xl text-[14px] transition ${
-        active ? "bg-base shadow-neu-in text-white" : "text-ink-soft hover:text-white"
+        active ? "bg-base shadow-neu-in text-ink-strong" : "text-ink-soft hover:text-ink-strong"
       }`}
     >
       <Icon className={`w-[18px] h-[18px] ${active ? "text-accent-soft" : ""}`} aria-hidden />

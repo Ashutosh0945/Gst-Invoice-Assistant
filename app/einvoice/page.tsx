@@ -29,7 +29,7 @@ export default async function EinvoicePage() {
               <ul className="space-y-3">
                 {s.flagged.map((r) => (
                   <li key={r.invoice_id}>
-                    <Link href={`/invoices/${r.invoice_id}`} className="block neu-tile p-4 hover:text-white">
+                    <Link href={`/invoices/${r.invoice_id}`} className="block neu-tile p-4 hover:text-ink-strong">
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="font-semibold">{r.invoice_number}</span>
                         <span className="text-sm text-ink-soft">{r.vendor_name}</span>

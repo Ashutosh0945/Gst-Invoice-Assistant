@@ -22,12 +22,12 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
 
   return (
     <div>
-      <Link href="/invoices" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-white mt-6">
+      <Link href="/invoices" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink-strong mt-6">
         <ArrowLeft className="w-4 h-4" aria-hidden /> All invoices
       </Link>
       <PageHeader title={inv.invoice_number || inv.source_filename}
         subtitle={`${inv.vendor_name_raw ?? "Unknown vendor"} · ${formatDate(inv.invoice_date)}`}
-        right={<StatusBadge value={inv.status} />} />
+        right={<div className="flex items-center gap-3"><Link href={`/invoices/${inv.id}/investigate`} className="btn py-1.5">Investigate</Link><Link href={`/invoices/${inv.id}/message`} className="btn py-1.5">Message vendor</Link><StatusBadge value={inv.status} /></div>} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {[["Grand total", formatMoney(inv.grand_total)], ["Taxable value", formatMoney(inv.subtotal)],

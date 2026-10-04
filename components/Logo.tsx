@@ -9,7 +9,7 @@ export function Logo({ size = "md", sub }: { size?: "sm" | "md" | "lg"; sub?: st
         {brand.logoUrl
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={brand.logoUrl} alt="" className="w-full h-full object-cover" />
-          : <Sparkles className="w-1/2 h-1/2 text-white" aria-hidden />}
+          : <Sparkles className="w-1/2 h-1/2 text-ink-strong" aria-hidden />}
       </div>
       <div className="leading-tight">
         <div className={`font-extrabold ${size === "lg" ? "text-2xl" : "text-lg"}`}>{brand.name}</div>

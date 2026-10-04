@@ -14,13 +14,15 @@ from backend.config import get_settings
 
 from backend.api.routes import router
 from backend.api.routes_compliance import router as compliance_router
+from backend.api.routes_ai import router as ai_router
+from backend.api.routes_security import router as security_router
 from backend.logging_conf import setup_logging
 
 setup_logging()
 logger = logging.getLogger("backend.api")
 
 # Shown by /health so you can confirm which version is live after a deploy.
-APP_VERSION = "0.2.2 (database-url-fix)"
+APP_VERSION = "0.5.0 (camera-security)"
 
 
 def _prepare_database() -> None:
@@ -47,6 +49,14 @@ app = FastAPI(
     description="AI + data-engineering pipeline for Indian GST invoice automation.",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def _security_audit(request: Request, call_next):
+    response = await call_next(request)
+    from backend.security.audit import record
+    record(request, response.status_code)       # never raises; see backend/security/audit.py
+    return response
 
 
 @app.middleware("http")
@@ -95,6 +105,8 @@ app.add_middleware(
 
 app.include_router(router, prefix="/api/v1")
 app.include_router(compliance_router, prefix="/api/v1")
+app.include_router(ai_router, prefix="/api/v1")
+app.include_router(security_router, prefix="/api/v1")
 
 
 @app.get("/health")

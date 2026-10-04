@@ -57,7 +57,7 @@ export default function NewInvoice() {
 
   return (
     <form onSubmit={submit} noValidate>
-      <Link href="/app/invoices" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-white mt-6"><ArrowLeft className="w-4 h-4" aria-hidden /> Invoices</Link>
+      <Link href="/app/invoices" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink-strong mt-6"><ArrowLeft className="w-4 h-4" aria-hidden /> Invoices</Link>
       <h1 className="text-[28px] font-extrabold tracking-tight pt-4 pb-6">New invoice</h1>
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="space-y-6 min-w-0">

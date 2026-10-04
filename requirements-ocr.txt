@@ -1,0 +1,5 @@
+# Optional: read photos and scanned PDFs (OCR) without the heavy PaddlePaddle stack.
+# RapidOCR runs the same PaddleOCR models on onnxruntime. It pulls in opencv-python and
+# onnxruntime (~160 MB extra), which does NOT fit Vercel's Python function size limit;
+# use it on Render/Railway/Docker or a local install:  pip install -r requirements-ocr.txt
+rapidocr_onnxruntime>=1.3

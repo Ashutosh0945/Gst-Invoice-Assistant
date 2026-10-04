@@ -100,7 +100,7 @@ export function FilterChips({ base, param, current, options }: {
         const href = o.value ? `${base}${base.includes("?") ? "&" : "?"}${param}=${o.value}` : base;
         return (
           <Link key={o.value || "all"} href={href}
-            className={`px-3.5 py-1.5 rounded-xl text-sm transition ${active ? "bg-base shadow-neu-in text-white" : "bg-base shadow-neu-sm text-ink-soft hover:text-white"}`}>
+            className={`px-3.5 py-1.5 rounded-xl text-sm transition ${active ? "bg-base shadow-neu-in text-ink-strong" : "bg-base shadow-neu-sm text-ink-soft hover:text-ink-strong"}`}>
             {o.label}{o.count !== undefined && <span className="ml-1.5 text-ink-faint tabular">{o.count}</span>}
           </Link>
         );

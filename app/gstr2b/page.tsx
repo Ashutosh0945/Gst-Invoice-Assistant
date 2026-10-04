@@ -82,7 +82,7 @@ export default async function Gstr2bPage({ searchParams }: { searchParams: { imp
                             <td className="text-ink-soft whitespace-nowrap">{formatDate(r.invoice_date)}</td>
                             <td className="num">{formatMoney(r.taxable_value)}</td>
                             <td className="num">{formatMoney(r.total_tax)}</td>
-                            <td><MatchBadge value={r.match_status} /></td>
+                            <td><MatchBadge value={r.match_status} /><div><Link href={`/gstr2b/explain/${r.id}`} className="text-xs text-accent-soft">Explain</Link></div></td>
                             <td className="text-xs text-ink-soft min-w-[240px] max-w-[320px]">
                               {r.match_notes}
                               {!r.itc_available && <div className="text-bad">Portal says ITC not available{r.itc_unavailable_reason ? `: ${r.itc_unavailable_reason}` : ""}</div>}

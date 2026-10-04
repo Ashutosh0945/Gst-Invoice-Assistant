@@ -1,3 +1,4 @@
+import { SmartSearch } from "@/components/SmartSearch";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Card, Empty, FilterChips, PageHeader } from "@/components/ui";
@@ -23,6 +24,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: { q
     <div>
       <PageHeader title="All invoices" subtitle={q ? `Showing matches for “${searchParams.q}”` : "Every invoice that has been read, checked and scored."}
         right={<Link href="/upload" className="btn-primary">Upload invoice</Link>} />
+      <SmartSearch />
       <Card title={`${rows.length} invoice${rows.length === 1 ? "" : "s"}`}
         action={<FilterChips base={base} param="status" current={searchParams.status} options={STATUSES} />}>
         {rows.length === 0

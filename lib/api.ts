@@ -112,6 +112,7 @@ export interface ReconciliationRow {
 }
 
 export interface InvoiceDetail extends InvoiceSummary {
+  extraction_confidence?: Record<string, number> | null;
   po_number_raw: string | null;
   llm_explanation: string | null;
   reviewed_by: string | null;

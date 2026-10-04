@@ -318,3 +318,40 @@ class ItcAssessment(Base):
     assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     invoice: Mapped["Invoice"] = relationship(back_populates="itc")
+
+
+class FeedbackRecord(Base):
+    """Human-in-the-loop dataset: what the extractor predicted vs what a reviewer confirmed.
+    Written only by the existing correction flow (review_service.correct_invoice)."""
+    __tablename__ = "feedback_records"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    invoice_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="SET NULL"), index=True)
+    scope: Mapped[str] = mapped_column(String(10))            # header | line
+    field: Mapped[str] = mapped_column(String(64), index=True)
+    line_no: Mapped[int | None] = mapped_column(Integer)
+    predicted_value: Mapped[str | None] = mapped_column(Text)
+    corrected_value: Mapped[str | None] = mapped_column(Text)
+    predicted_confidence: Mapped[float | None] = mapped_column(Numeric(5, 4))
+    was_correct: Mapped[bool] = mapped_column(Boolean, default=False)
+    reviewer: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AccessEvent(Base):
+    """Security audit trail: authentication attempts and data-access actions (Who -> What -> When -> Status).
+    Never stores keys, tokens, request bodies or full IP addresses."""
+    __tablename__ = "access_events"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    kind: Mapped[str] = mapped_column(String(10), index=True)          # auth | access
+    action: Mapped[str] = mapped_column(String(48), index=True)        # e.g. auth.failed, invoice.viewed
+    outcome: Mapped[str] = mapped_column(String(10))                   # success | failure | denied
+    actor: Mapped[str] = mapped_column(String(64))                     # "API key" | "Anonymous (no login)"
+    ip_masked: Mapped[str | None] = mapped_column(String(64), index=True)
+    method: Mapped[str] = mapped_column(String(8))
+    path: Mapped[str] = mapped_column(String(200))                     # route template, ids replaced
+    resource_id: Mapped[str | None] = mapped_column(String(64))
+    status_code: Mapped[int] = mapped_column(Integer)
+    user_agent: Mapped[str | None] = mapped_column(String(120))

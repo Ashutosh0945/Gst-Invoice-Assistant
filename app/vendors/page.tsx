@@ -32,7 +32,7 @@ export default async function VendorsPage() {
               <tbody>
                 {vendors.map((v) => (
                   <tr key={v.vendor_gstin}>
-                    <td><Link href={`/invoices?q=${v.vendor_gstin}`} className="font-semibold hover:text-accent-soft">{v.vendor_name ?? "—"}</Link>
+                    <td><Link href={`/vendors/${encodeURIComponent(v.vendor_gstin)}`} className="font-semibold hover:text-accent-soft">{v.vendor_name ?? "—"}</Link>
                       <div className="text-xs text-ink-faint">{v.vendor_gstin}</div></td>
                     <td><RiskBadge value={v.risk_level} /></td>
                     <td className="num"><div className="flex items-center justify-end gap-2"><Meter value={v.risk_score / 100} color={COLOR[v.risk_level]} /><span className="w-8">{Math.round(v.risk_score)}</span></div></td>

@@ -86,6 +86,7 @@ class InvoiceSummaryOut(BaseModel):
 
 
 class InvoiceDetailOut(InvoiceSummaryOut):
+    extraction_confidence: dict | None = None
     po_number_raw: str | None
     llm_explanation: str | None
     reviewed_by: str | None

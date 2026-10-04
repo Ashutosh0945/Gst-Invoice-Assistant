@@ -6,6 +6,7 @@ RUN npm ci --no-audit --no-fund
 COPY app ./app
 COPY components ./components
 COPY lib ./lib
+COPY public ./public
 COPY next.config.mjs tailwind.config.ts postcss.config.mjs tsconfig.json ./
 ENV BACKEND_URL=http://api:8000
 RUN npx next build

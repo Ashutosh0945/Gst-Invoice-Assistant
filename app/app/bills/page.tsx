@@ -37,7 +37,7 @@ export default function Bills() {
           <div className="flex gap-2 overflow-x-auto pb-3 mb-2">
             {CATS.map(([v, l]) => (
               <button key={v || "all"} onClick={() => setCat(v)} aria-pressed={cat === v}
-                className={`shrink-0 px-3.5 py-1.5 rounded-xl text-sm ${cat === v ? "bg-base shadow-neu-in text-white" : "bg-base shadow-neu-sm text-ink-soft"}`}>{l}</button>
+                className={`shrink-0 px-3.5 py-1.5 rounded-xl text-sm ${cat === v ? "bg-base shadow-neu-in text-ink-strong" : "bg-base shadow-neu-sm text-ink-soft"}`}>{l}</button>
             ))}
           </div>
           {error ? <Empty title="Couldn't load bills" hint={error} /> : rows === null ? <p className="text-ink-soft text-sm py-6">Loading…</p> :
@@ -45,7 +45,7 @@ export default function Bills() {
               <ul className="space-y-3">
                 {rows.map((b) => (
                   <li key={b.id}>
-                    <Link href={`/app/bills/${b.id}`} className="flex items-center gap-3 neu-tile p-3.5 hover:text-white">
+                    <Link href={`/app/bills/${b.id}`} className="flex items-center gap-3 neu-tile p-3.5 hover:text-ink-strong">
                       <div className="icon-tile w-10 h-10 shrink-0">
                         {b.einvoice_status === "MISMATCH" || b.einvoice_status === "SIGNATURE_INVALID"
                           ? <ShieldAlert className="w-4 h-4 text-bad" aria-label="QR problem" />

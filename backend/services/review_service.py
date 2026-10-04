@@ -58,6 +58,7 @@ def correct_invoice(db: Session, invoice: Invoice, reviewer: str, header_fields:
             setattr(line, k, v)
         line_diffs.append({"line_id": str(corr["line_id"]), "before": before_line, "after": corr["fields"]})
 
+    _record_feedback(db, invoice, reviewer, before, header_fields, line_diffs)
     invoice.status = InvoiceStatus.APPROVED.value
     invoice.reviewed_by = reviewer
     invoice.reviewed_at = datetime.now(timezone.utc)
@@ -87,3 +88,35 @@ def record_payment(db: Session, invoice: Invoice, paid_on, actor: str) -> Invoic
     db.commit()
     db.refresh(invoice)
     return invoice
+
+
+def _norm_fb(v) -> str | None:
+    if v is None:
+        return None
+    s = str(v).strip()
+    try:
+        from decimal import Decimal
+        return format(Decimal(s).normalize(), "f")
+    except Exception:  # noqa: BLE001 - not a number
+        return s.upper()
+
+
+def _record_feedback(db: Session, invoice: Invoice, reviewer: str, before: dict, after: dict, line_diffs: list) -> None:
+    """Feedback loop: store the extractor's prediction next to the human's answer.
+    Never changes any model; evaluation happens offline (see backend/ai/feedback.py)."""
+    from backend.db.models import FeedbackRecord
+
+    conf = invoice.extraction_confidence or {}
+    for field, new in after.items():
+        old = before.get(field)
+        db.add(FeedbackRecord(invoice_id=invoice.id, scope="header", field=field, predicted_value=None if old is None else str(old),
+                              corrected_value=None if new is None else str(new),
+                              predicted_confidence=conf.get(field) if isinstance(conf.get(field), (int, float)) else None,
+                              was_correct=_norm_fb(old) == _norm_fb(new), reviewer=reviewer))
+    for d in line_diffs:
+        line = db.get(InvoiceLine, d["line_id"])
+        for field, new in d["after"].items():
+            old = d["before"].get(field)
+            db.add(FeedbackRecord(invoice_id=invoice.id, scope="line", field=field, line_no=line.line_no if line else None,
+                                  predicted_value=None if old is None else str(old), corrected_value=None if new is None else str(new),
+                                  was_correct=_norm_fb(old) == _norm_fb(new), reviewer=reviewer))
