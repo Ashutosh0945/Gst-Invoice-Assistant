@@ -17,8 +17,10 @@ GSTIN_ANY = re.compile(r"\b(\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z])\b")
 AMOUNT = re.compile(r"-?\(?\d[\d,]*\.\d{1,2}\)?|-?\(?\d[\d,]*\)?")
 BUYER_MARK = re.compile(r"(?i)\b(bill(?:ed)?\s*to|buyer|consignee|ship(?:ped)?\s*to|recipient|customer|sold\s+to)\b")
 INV_NO = re.compile(r"(?i)\b(?:tax\s+)?(?:invoice|inv|bill)\s*(?:no\.?|number|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9/\-]*)")
-INV_DATE = re.compile(rf"(?i)invoice\s+date\s*[:\-]?\s*({DATE_PAT})")
-ANY_DATE = re.compile(rf"(?i)(?<!due )(?<!po )(?<!order )\bdate\s*[:\-]?\s*({DATE_PAT})")
+INV_DATE = re.compile(rf"(?i)\binvoice\s*date\s*[:\-]?\s*({DATE_PAT})")
+ANY_DATE = re.compile(
+    rf"(?i)(?<!due )(?<!po )(?<!order )\bdate\s*[:\-]?\s*({DATE_PAT})"
+)
 PO_NO = re.compile(r"(?i)\b(?:P\.?O\.?|Purchase\s+Order)\s*(?:(?:No\.?|Number|#)\s*[:\-]?|[:\-])\s*([A-Z0-9][A-Z0-9/\-]{2,})")
 POS = re.compile(r"(?i)place\s+of\s+supply\s*[:\-]?\s*(.+)$")
 TITLE_SKIP = re.compile(r"(?i)invoice|original|duplicate|triplicate|gstin|date|bill|page|e-?way|irn|ack")

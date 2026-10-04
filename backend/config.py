@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     native_text_min_words: int = 25      # >= this many embedded words => treat page as digital
     ocr_lang: str = "en"
     ocr_use_gpu: bool = False
+    # Google Cloud Vision OCR for Vercel/serverless image processing.
+    # Keep the key server-side; never expose it through NEXT_PUBLIC_* variables.
+    google_vision_api_key: str | None = None
+    google_vision_timeout_s: float = 30.0
     layoutlm_model_path: str | None = None
 
     # --- deterministic validation tolerances (INR) ---
