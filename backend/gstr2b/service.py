@@ -74,12 +74,15 @@ def import_gstr2b(db: Session, raw: bytes, filename: str) -> Gstr2bImport:
             place_of_supply=t.place_of_supply, reverse_charge=t.reverse_charge, itc_available=t.itc_available,
             itc_unavailable_reason=t.itc_unavailable_reason, supplier_filed_on=t.supplier_filed_on, irn=t.irn,
             match_status=res.status, matched_invoice_id=res.book_id, match_score=res.score, match_notes=res.notes,
+            mismatch_fields=res.mismatch_fields, candidates=res.candidates,
+            resolution_status=None if res.status == "MATCHED" else "open",
         )
         db.add(rec)
         db.flush()
         if res.book_id is not None:
             inv = by_id[res.book_id]
-            inv.gstr2b_status = "IN_2B"
+            # A GSTIN mismatch is linked for review but does NOT count as "in GSTR-2B": credit stays at risk.
+            inv.gstr2b_status = "MISSING_IN_2B" if res.status == "GSTIN_MISMATCH" else "IN_2B"
             inv.gstr2b_record_id = rec.id
     for inv_id in missing:
         by_id[inv_id].gstr2b_status = "MISSING_IN_2B"

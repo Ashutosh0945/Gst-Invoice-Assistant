@@ -16,3 +16,4 @@ pytest>=8.0
 cryptography>=42.0        # e-invoice QR signature verification (RS256)
 zxing-cpp>=2.2            # robust QR decoding (e-invoice QRs are too dense for OpenCV's detector)
 qrcode[pil]>=7.4          # demo/test only: draws signed QR codes onto synthetic invoices
+rapidfuzz>=3.6          # near-duplicate & invoice-number similarity (v0.6)

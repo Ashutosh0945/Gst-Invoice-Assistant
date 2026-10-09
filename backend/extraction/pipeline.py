@@ -86,6 +86,12 @@ def _consistency_score(inv: InvoiceData) -> float:
         tv = [li.taxable_value for li in inv.items if li.taxable_value is not None]
         if inv.subtotal is not None and tv and abs(sum(tv) - inv.subtotal) <= _TOL:
             score += 2.0
+    if inv.items:   # per-line tax must add up to the header tax (catches readers that misread tax columns)
+        line_tax = sum(sum((x or 0) for x in (li.cgst, li.sgst, li.igst)) for li in inv.items)
+        head_tax = sum((x or 0) for x in (inv.total_cgst, inv.total_sgst, inv.total_igst))
+        has_line_tax = any((li.cgst or li.sgst or li.igst) for li in inv.items)
+        if head_tax and (not has_line_tax or abs(line_tax - head_tax) <= _TOL * max(1, len(inv.items))):
+            score += 1.0
     if inv.subtotal is not None and inv.grand_total is not None:
         taxes = sum((x or 0) for x in (inv.total_cgst, inv.total_sgst, inv.total_igst, inv.total_cess))
         if abs(inv.subtotal + taxes + (inv.round_off or 0) - inv.grand_total) <= _TOL:
@@ -93,7 +99,7 @@ def _consistency_score(inv: InvoiceData) -> float:
     return score
 
 
-def extract_rules_ensemble(words: list[OCRWord], pages: list[PageData]) -> InvoiceData:
+def extract_rules_ensemble(words: list[OCRWord], pages: list[PageData], use_learned: bool = True) -> InvoiceData:
     """Runs both rule-based extractors (regex line parser and column-aware layout
     heuristic) and keeps whichever result is more complete and self-consistent.
     Each is strong on different layouts (see ml/benchmark.py), so together they
@@ -105,6 +111,13 @@ def extract_rules_ensemble(words: list[OCRWord], pages: list[PageData]) -> Invoi
         candidates.append(heuristic_extract(pages))
     except Exception as exc:  # noqa: BLE001 - a heuristic crash must not lose the baseline result
         logger.warning("Layout heuristic extractor failed: %s", exc)
+    from backend.extraction import learned
+    if use_learned and learned.is_available() and pages:
+        try:   # trained GST-LayoutKIE model (research/). Listed LAST: on a tie the proven rule readers win,
+            p0 = pages[0]   # so the model is only chosen when its result is strictly more self-consistent.
+            candidates.append(learned.extract([(w.text, w.bbox) for w in p0.words], p0.width, p0.height))
+        except Exception as exc:  # noqa: BLE001 - the model must never break extraction
+            logger.warning("GST-LayoutKIE failed: %s", exc)
     best = max(candidates, key=_consistency_score)   # ties keep the regex baseline (first)
     if _consistency_score(best) >= _FULLY_CONSISTENT:
         # Every total cross-checks against the line items, which is independent evidence
@@ -115,4 +128,4 @@ def extract_rules_ensemble(words: list[OCRWord], pages: list[PageData]) -> Invoi
     return best
 
 
-_FULLY_CONSISTENT = len(_REQUIRED) + 4
+_FULLY_CONSISTENT = len(_REQUIRED) + 5

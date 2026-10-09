@@ -27,7 +27,13 @@ async function cacheShell() {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(cacheShell().then(() => self.skipWaiting()));
+  // First install activates immediately. An UPDATE waits until the user clicks "Reload" (see PwaManager),
+  // so an open page never runs a mix of old and new code.
+  event.waitUntil(cacheShell().then(() => (self.registration.active ? undefined : self.skipWaiting())));
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

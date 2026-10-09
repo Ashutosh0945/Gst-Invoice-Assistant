@@ -4,8 +4,8 @@ data/inbox/
 data/staging/
 data/samples/
 data/layoutlm_dataset/
-models/
-ml/
+/models/
+/ml/
 tests/
 scripts/
 sql/
@@ -15,3 +15,4 @@ Dockerfile.ml
 requirements-ml.txt
 pytest.ini
 *.db
+/research/

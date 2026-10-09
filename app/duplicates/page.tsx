@@ -1,3 +1,4 @@
+import { DuplicateReview } from "@/components/V6Panels";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Card, Empty, PageHeader } from "@/components/ui";
@@ -9,6 +10,7 @@ export default async function DuplicatesPage() {
   return (
     <div>
       <PageHeader title="Duplicates" subtitle="Re-uploaded files and likely duplicate bills, caught by matching vendor, invoice number, date window and amount. Duplicates are kept out of your tax credit until reviewed." />
+      <DuplicateReview />
       <Card>
         {rows.length === 0 ? <Empty title="No duplicates detected" /> : (
           <div className="overflow-x-auto -mx-3">

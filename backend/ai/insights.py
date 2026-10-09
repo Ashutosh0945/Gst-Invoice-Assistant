@@ -87,7 +87,10 @@ def recon_2b(db: Session, record_id) -> dict | None:
                "FUZZY_MATCHED": "Matched, but the invoice number is written differently in GSTR-2B.",
                "DATE_MISMATCH": "Matched, but the invoice date differs.",
                "AMOUNT_MISMATCH": "The amounts the vendor reported differ from your books.",
-               "MISSING_IN_BOOKS": "The vendor reported this invoice, but it isn't in your books."}
+               "MISSING_IN_BOOKS": "The vendor reported this invoice, but it isn't in your books.",
+               "GSTIN_MISMATCH": "The same invoice exists in your books under a different supplier GSTIN.",
+               "REVIEW_REQUIRED": "More than one invoice in your books fits this line equally well; choose the right one.",
+               "POTENTIAL_DUPLICATE": "This supplier invoice appears more than once in the GSTR-2B statement."}
     diffs = [x for x in rows if x["match"] is False]
     facts = {"match_status": r.match_status, "system_reason": reasons.get(r.match_status, r.match_status),
              "matcher_notes": r.match_notes, "differences": diffs, "itc_available_per_portal": r.itc_available,

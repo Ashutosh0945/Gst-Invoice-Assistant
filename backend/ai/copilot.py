@@ -8,6 +8,7 @@ so the user can see exactly where each number came from.
 from __future__ import annotations
 
 import re
+from decimal import Decimal
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
@@ -26,6 +27,12 @@ SUGGESTIONS = [
 ]
 
 INTENTS = [  # order matters: first match wins
+    ("review_queue", r"(?:which|what|list|show).*invoices?.*(?:manual review|need(?:s)? review|require(?:s)? review|to review)"),
+    ("unresolved_by_vendor", r"vendors?.*(?:most|highest|top).*(?:unresolved|open).*(?:mismatch|discrepanc)|unresolved.*mismatch.*vendor"),
+    ("tax_difference", r"(?:total )?tax difference|difference in (?:tax|gst)|how much tax.*(?:differ|mismatch)"),
+    ("repeated_discrepancies", r"repeat(?:ed)?.*discrepanc|same (?:problem|issue|error).*again|recurring (?:issue|problem|discrepanc)"),
+    ("prioritise", r"investigate first|what first|prioriti[sz]e|most important (?:issue|discrepanc)"),
+    ("forecast", r"forecast|predict|next month|next quarter|projection"),
     ("search", r"invoices?\b.*\b(?:above|over|below|under|between|more than|less than|greater than)\s*(?:₹|rs\.?)?\s*\d"),
     ("investigate", r"\b(?:investigate|explain|check|tell me about)\b.*\binvoice\b\s+([A-Z0-9][A-Z0-9/\-]{2,})"),
     ("vendor_errors", r"vendor.*(?:most|highest|top|max).*(?:error|mistake|issue)|(?:most|highest).*(?:error|mistake).*vendor"),
@@ -52,6 +59,60 @@ def _period_from(text: str) -> str | None:
 FOLLOW_UP = r"^\s*(?:what|how) about\b|^\s*and\b|^\s*(?:same|now) (?:for|but)\b|^\s*for (?:last|this) (?:month|quarter|year)"
 
 
+# ----------------------------------------------------------------------------- AI router (whitelisted)
+ROUTABLE = {   # the ONLY things the AI router may choose; each maps to a fixed read-only query
+    "summary": "overall GST / purchase / invoice summary or totals for a period",
+    "itc_at_risk": "input tax credit (ITC) at risk, blocked or claimable",
+    "vendor_errors": "which vendor has the most GST/validation errors",
+    "vendors_attention": "risky vendors or vendors needing attention",
+    "gstr2b_mismatches": "GSTR-2B mismatches or invoices missing from GSTR-2B",
+    "anomalies": "unusual, suspicious or anomalous invoices",
+    "risks": "what needs attention / open issues / priorities",
+    "search": "find or list invoices matching conditions (amount, vendor, status, period)",
+    "investigate": "explain or check one specific invoice by its number",
+    "review_queue": "which invoices need manual review",
+    "unresolved_by_vendor": "vendors with the most unresolved GSTR-2B mismatches",
+    "tax_difference": "total tax difference in unresolved reconciliations",
+    "repeated_discrepancies": "vendors with repeated discrepancies",
+    "prioritise": "which discrepancies to investigate first",
+    "forecast": "explain forecast / predicted purchases or GST",
+    "unsupported": "anything else (weather, jokes, legal advice, changing data, etc.)",
+}
+PERIODS = {"this_month", "last_month", "this_quarter", "this_fy", "last_90_days", "all"}
+
+
+def _ai_route(text: str) -> tuple[str, dict] | None:
+    """Asks OpenRouter to map a free-form question onto ONE whitelisted intent. The reply is validated:
+    unknown intents, periods or malformed JSON are rejected. The AI never writes or runs a query."""
+    import json
+
+    from backend.llm.explain import chat
+
+    menu = "\n".join(f"- {k}: {v}" for k, v in ROUTABLE.items())
+    out = chat([{"role": "system", "content": "You route questions for a GST invoice app. Choose exactly one intent from this list:\n"
+                 f"{menu}\nReply ONLY with JSON: {{\"intent\": ..., \"period\": one of {sorted(PERIODS)} or null, "
+                 "\"invoice_ref\": invoice number or null}}"},
+                {"role": "user", "content": text[:500]}], max_tokens=120, retries=1)
+    if not out:
+        return None
+    try:
+        raw = json.loads(out[out.find("{"): out.rfind("}") + 1])
+    except ValueError:
+        return None
+    intent = raw.get("intent")
+    if intent not in ROUTABLE or intent == "unsupported":
+        return ("help", {}) if intent == "unsupported" else None
+    params: dict = {}
+    if raw.get("period") in PERIODS:
+        params["period"] = raw["period"]
+    ref = raw.get("invoice_ref")
+    if intent == "investigate":
+        if not (isinstance(ref, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9/\-]{2,40}", ref)):
+            return None
+        params["invoice_ref"] = ref
+    return intent, params
+
+
 def detect(text: str, context: dict | None) -> tuple[str, dict]:
     if context and context.get("intent") not in (None, "help") and re.search(FOLLOW_UP, text, re.I):
         return context["intent"], dict(context.get("params") or {})
@@ -62,6 +123,11 @@ def detect(text: str, context: dict | None) -> tuple[str, dict]:
             return name, params
     if context and context.get("intent"):   # follow-up like "what about last month?" or "and for Apex?"
         return context["intent"], dict(context.get("params") or {})
+    routed = _ai_route(text)                 # only when the rules didn't recognise the question
+    if routed:
+        intent, params = routed
+        params["_routed_by"] = "ai"
+        return intent, params
     return "help", {}
 
 
@@ -71,7 +137,8 @@ def _table(title, columns, rows, link=None):
 
 def answer(db: Session, message: str, history: list[dict] | None = None, context: dict | None = None) -> dict:
     intent, params = detect(message, context)
-    period_key = _period_from(message) or (context or {}).get("period") if intent != "help" else None
+    routed_by = "ai" if params.pop("_routed_by", None) else "rules"
+    period_key = (_period_from(message) or params.pop("period", None) or (context or {}).get("period")) if intent != "help" else None
     if intent in ("summary",) and not period_key:
         period_key = "this_month" if "month" in message.lower() else "all"
     facts: dict = {}
@@ -183,6 +250,8 @@ def answer(db: Session, message: str, history: list[dict] | None = None, context
             rule_text = (f"Invoice {ref}: " + ("; ".join(f"{s['stage']}: {s['summary']}" for s in problems)
                          if problems else "every check passed."))
             cards.append({"type": "link", "title": f"Open the full investigation of {ref}", "href": f"/invoices/{inv.id}/investigate"})
+    elif intent in ("review_queue", "unresolved_by_vendor", "tax_difference", "repeated_discrepancies", "prioritise", "forecast"):
+        rule_text, facts, cards, followups = _v6_intent(db, intent)
     else:
         rule_text = ("I can answer questions about your GST data, for example: " + "; ".join(SUGGESTIONS[:4]) + ".")
 
@@ -190,9 +259,128 @@ def answer(db: Session, message: str, history: list[dict] | None = None, context
         reply = {"text": rule_text, "source": "rules", "note": None}
     else:
         reply = explain_facts(intent.replace("_", " "), facts, question=message, history=history, fallback=rule_text)
+    evidence = build_evidence(intent, period_key, facts, cards, reply["source"])
     return {"answer": reply["text"], "answer_source": reply["source"], "note": reply.get("note"),
-            "intent": intent, "context": {"intent": intent, "params": params, "period": period_key},
-            "facts": facts, "cards": cards, "followups": followups or SUGGESTIONS[:3]}
+            "intent": intent, "routed_by": routed_by, "context": {"intent": intent, "params": params, "period": period_key},
+            "facts": facts, "cards": cards, "followups": followups or SUGGESTIONS[:3], "evidence": evidence}
+
+
+# ----------------------------------------------------------------------------- evidence panel (Improvement 5)
+SOURCES = {
+    "summary": ["invoices", "itc_assessments", "gstr2b_records"], "itc_at_risk": ["itc_assessments", "invoices", "gstr2b_records"],
+    "vendor_errors": ["invoices", "validation_findings"], "vendors_attention": ["invoices", "validation_findings", "gstr2b_records", "itc_assessments"],
+    "gstr2b_mismatches": ["gstr2b_records", "invoices"], "anomalies": ["invoices", "anomaly_scores"], "risks": ["invoices", "validation_findings", "gstr2b_records", "itc_assessments"],
+    "search": ["invoices"], "investigate": ["invoices", "validation_findings", "gstr2b_records", "itc_assessments", "audit_logs"],
+    "review_queue": ["invoices"], "unresolved_by_vendor": ["gstr2b_records"], "tax_difference": ["gstr2b_records", "invoices"],
+    "repeated_discrepancies": ["validation_findings", "gstr2b_records", "invoices"], "prioritise": ["invoices", "gstr2b_records", "itc_assessments"],
+    "forecast": ["invoices (monthly aggregates)", "forecast_runs"]}
+DEFINITIONS = {
+    "itc_at_risk": "ITC at risk = at-risk + needs-decision amounts from the ITC rules (not confirmed lost or eligible).",
+    "gstr2b_mismatches": "A mismatch is any GSTR-2B line that isn't an exact match, or an invoice missing from GSTR-2B.",
+    "tax_difference": "Sum of |GSTR-2B tax − register tax| over unresolved amount-mismatched pairs (each pair counted once).",
+    "forecast": "Forecasts are statistical estimates of purchase GST, not tax liability; see model, holdout error and range.",
+    "anomalies": "Anomaly = statistical signal for review; not proof of fraud or non-compliance.",
+    "unresolved_by_vendor": "Unresolved = GSTR-2B line that isn't an exact match and isn't marked resolved."}
+
+
+def build_evidence(intent: str, period_key: str | None, facts: dict, cards: list, source: str) -> dict:
+    links = []
+    for c in cards:
+        for href, row in zip(c.get("row_links") or [], c.get("rows") or []):
+            links.append({"label": str(row[0]), "href": href})
+        if c.get("type") == "link":
+            links.append({"label": c["title"], "href": c["href"]})
+    kinds = []
+    if facts:
+        kinds.append("verified database facts")
+        kinds.append("deterministic calculations")
+    if intent in ("anomalies",):
+        kinds.append("ML / statistical signals")
+    if intent == "forecast" and facts.get("status") == "ok":
+        kinds.append("ML forecast (estimate)")
+    if source == "ai":
+        kinds.append("AI explanation (wording only, numbers fact-checked)")
+    if not facts or facts.get("status") == "insufficient_history" or facts.get("count") == 0:
+        kinds.append("insufficient data")
+    from backend.ai import facts as F
+    return {"period": F.resolve_period(period_key)["label"] if period_key else "All time / not period-specific",
+            "filters": {k: v for k, v in (facts.get("understood_as") and {"search": facts["understood_as"]} or {}).items()},
+            "data_sources": SOURCES.get(intent, []), "definition": DEFINITIONS.get(intent),
+            "records": links[:20], "response_categories": kinds,
+            "provenance": "Numbers come from read-only database queries in backend/ai/facts.py and the ML modules; "
+                          "the language model only words the answer and every number it writes is checked against these facts.",
+            "limitations": "Credit/debit notes and amendments in GSTR-2B are not reconciled; forecasts and anomaly scores are estimates."}
+
+
+def _v6_intent(db: Session, intent: str):
+    from sqlalchemy import select
+
+    from backend.db.models import Gstr2bRecord, Invoice
+    if intent == "review_queue":
+        rows = db.execute(select(Invoice).where(Invoice.status == "NEEDS_REVIEW").order_by(Invoice.confidence_score)).scalars().all()
+        facts = {"count": len(rows), "invoices": [{"invoice_number": i.invoice_number, "vendor": i.vendor_name_raw,
+                 "confidence_pct": round(float(i.confidence_score or 0) * 100), "errors": [f.code for f in i.findings if f.severity == "ERROR"][:4]} for i in rows[:15]]}
+        text = f"{len(rows)} invoices need manual review." if rows else "No invoices need manual review right now."
+        card = _table("Invoices needing review", ["Invoice", "Vendor", "Confidence", "Errors"],
+                      [[x["invoice_number"], x["vendor"], f"{x['confidence_pct']}%", ", ".join(x["errors"]) or "—"] for x in facts["invoices"]], "/review")
+        card["row_links"] = [f"/invoices/{i.id}/investigate" for i in rows[:15]]
+        return text, facts, [card], ["Which discrepancies should I investigate first?"]
+    recs = db.execute(select(Gstr2bRecord)).scalars().all()
+    open_recs = [r for r in recs if r.match_status != "MATCHED" and (r.resolution_status or "open") != "resolved"]
+    if intent == "unresolved_by_vendor":
+        by: dict[str, list] = {}
+        for r in open_recs:
+            by.setdefault(r.supplier_name or r.supplier_gstin, []).append(r)
+        top = sorted(by.items(), key=lambda kv: -len(kv[1]))[:5]
+        facts = {"count": len(open_recs), "vendors": [{"vendor": v, "unresolved": len(rs), "kinds": sorted({r.match_status for r in rs})} for v, rs in top]}
+        text = (f"{top[0][0]} has the most unresolved GSTR-2B mismatches: {len(top[0][1])}." if top else
+                "There are no unresolved GSTR-2B mismatches." if recs else "No GSTR-2B has been imported, so there's nothing to reconcile.")
+        card = _table("Unresolved GSTR-2B mismatches by vendor", ["Vendor", "Unresolved", "Kinds"],
+                      [[x["vendor"], x["unresolved"], ", ".join(x["kinds"])] for x in facts["vendors"]], "/gstr2b")
+        return text, facts, [card], ["What is the total tax difference in unresolved reconciliations?"]
+    if intent == "tax_difference":
+        diff, n, items = Decimal(0), 0, []
+        for r in open_recs:
+            if r.match_status == "AMOUNT_MISMATCH" and r.matched_invoice_id:
+                inv = db.get(Invoice, r.matched_invoice_id)
+                t2b = (r.igst or 0) + (r.cgst or 0) + (r.sgst or 0) + (r.cess or 0)
+                tb = sum((x or 0) for x in (inv.total_cgst, inv.total_sgst, inv.total_igst, inv.total_cess))
+                d = abs(t2b - tb)
+                diff += d; n += 1
+                items.append({"invoice_number": inv.invoice_number, "vendor": r.supplier_name, "difference": float(d), "invoice_id": str(inv.id)})
+        facts = {"tax_difference": float(diff), "pairs": n, "items": items[:15]}
+        text = f"The total tax difference across {n} unresolved amount mismatches is {F.inr(diff)}." if n else "There are no unresolved amount mismatches."
+        card = _table("Unresolved tax differences", ["Invoice", "Vendor", "Difference"], [[x["invoice_number"], x["vendor"], F.inr(x["difference"])] for x in items[:15]], "/gstr2b")
+        card["row_links"] = [f"/invoices/{x['invoice_id']}/investigate" for x in items[:15]]
+        return text, facts, [card], ["Which vendors have the most unresolved GST mismatches?"]
+    if intent == "repeated_discrepancies":
+        vp = [v for v in F.vendor_profiles(db) if v["repeated_issues"] or v["gstr2b_mismatches"] >= 2]
+        facts = {"count": len(vp), "vendors": [{"vendor": v["vendor_name"], "repeated_issues": v["repeated_issues"], "gstr2b_mismatches": v["gstr2b_mismatches"]} for v in vp[:8]]}
+        text = (f"{len(vp)} vendors have repeated discrepancies; {vp[0]['vendor_name']} is first." if vp else "No vendor has repeated discrepancies.")
+        card = _table("Vendors with repeated discrepancies", ["Vendor", "Repeated validation issues", "GSTR-2B mismatches"],
+                      [[x["vendor"], ", ".join(f"{i['code']}×{i['times']}" for i in x["repeated_issues"]) or "—", x["gstr2b_mismatches"]] for x in facts["vendors"]], "/vendors")
+        return text, facts, [card], ["Which vendors need attention?"]
+    if intent == "prioritise":
+        from backend.services.workspace import action_center
+        acts = action_center(db)["priority_actions"][:8]
+        facts = {"count": len(acts), "ranking_rule": "severity weight + 10·log10(1 + amount at stake)",
+                 "top": [{"title": a["title"], "invoice": a["invoice_number"] or a["vendor"], "priority_score": a["priority_score"]} for a in acts]}
+        text = (f"Start with: {acts[0]['title']} ({acts[0]['invoice_number'] or acts[0]['vendor']})." if acts else "Nothing needs investigation right now.")
+        card = _table("Investigate in this order", ["Priority", "Issue", "Invoice / vendor"], [[a["priority_score"], a["title"], a["invoice_number"] or a["vendor"]] for a in acts], "/risk")
+        card["row_links"] = [f"/invoices/{a['invoice_id']}/investigate" if a.get("invoice_id") else "/risk" for a in acts]
+        return text, facts, [card], ["Explain why the first one was flagged"]
+    # forecast: explain stored/derived results; the LLM never creates forecast values
+    from backend.ml.forecasting import forecast_series, monthly
+    invs = db.execute(select(Invoice).where(Invoice.status.notin_(["REJECTED", "FAILED"]))).scalars().all()
+    months, y, filled = monthly([(i.invoice_date, float(sum((x or 0) for x in (i.total_cgst, i.total_sgst, i.total_igst, i.total_cess)))) for i in invs if i.invoice_date])
+    fc = forecast_series(months, y, filled=filled)
+    facts = {"status": fc["status"], "model": fc.get("model"), "forecast": fc.get("forecast"), "selection": fc.get("selection"),
+             "message": fc.get("message"), "label": fc["label"],
+             "holdout_mae": fc["evaluation"][fc["model"]]["MAE"] if fc["status"] == "ok" else None}
+    text = (f"Using {fc['model']}, GST on purchases next month is estimated at {F.inr(fc['forecast'][0]['forecast'])} "
+            f"(range {F.inr(fc['forecast'][0]['low'])}–{F.inr(fc['forecast'][0]['high'])}). {fc['selection']} This is an estimate, not tax liability."
+            if fc["status"] == "ok" else fc["message"])
+    return text, facts, [{"type": "link", "title": "Open forecasts in Analytics", "href": "/forecast"}], ["Give me this month's GST summary"]
 
 
 # ----------------------------------------------------------------------------- CFO brief

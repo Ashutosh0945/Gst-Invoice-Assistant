@@ -15,6 +15,7 @@ from backend.config import get_settings
 from backend.api.routes import router
 from backend.api.routes_compliance import router as compliance_router
 from backend.api.routes_ai import router as ai_router
+from backend.api.routes_v6 import router as v6_router
 from backend.api.routes_security import router as security_router
 from backend.logging_conf import setup_logging
 
@@ -22,7 +23,7 @@ setup_logging()
 logger = logging.getLogger("backend.api")
 
 # Shown by /health so you can confirm which version is live after a deploy.
-APP_VERSION = "0.5.0 (camera-security)"
+APP_VERSION = "0.6.0 (actions-ml)"
 
 
 def _prepare_database() -> None:
@@ -106,6 +107,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api/v1")
 app.include_router(compliance_router, prefix="/api/v1")
 app.include_router(ai_router, prefix="/api/v1")
+app.include_router(v6_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
 
 

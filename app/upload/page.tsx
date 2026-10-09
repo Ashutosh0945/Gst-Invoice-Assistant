@@ -19,11 +19,16 @@ const FIELDS: Array<[keyof InvoiceDetail & string, string, string]> = [
   ["grand_total", "Grand total", "grand_total"],
 ];
 
-function upload(file: File, onProgress: (p: number) => void, optimize = false): Promise<InvoiceDetail> {
+let currentXhr: XMLHttpRequest | null = null;
+
+function upload(file: File, onProgress: (p: number) => void, optimize = false, key?: string): Promise<InvoiceDetail> {
   // XMLHttpRequest (not fetch) so we can show real upload progress.
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    currentXhr = xhr;
     xhr.open("POST", `/api/v1/invoices${optimize ? "?optimize=true" : ""}`);
+    if (key) xhr.setRequestHeader("Idempotency-Key", key);
+    xhr.onabort = () => reject(Object.assign(new Error("Upload cancelled."), { network: false, cancelled: true }));
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((100 * e.loaded) / e.total));
     xhr.onload = () => {
       let data: { detail?: string } | InvoiceDetail = {} as InvoiceDetail;
@@ -91,12 +96,13 @@ export default function UploadPage() {
     }
     setStage("uploading"); setProgress(0);
     try {
-      const inv = await upload(file, (p) => { setProgress(p); if (p >= 100) setStage("processing"); }, isImage);
+      const inv = await upload(file, (p) => { setProgress(p); if (p >= 100) setStage("processing"); }, isImage, `sha256-${hash}`);
       await markUploaded(hash, inv.id);
       setResult(inv); setStage("complete");
     } catch (e) {
       if ((e as { network?: boolean }).network) {      // connection dropped: keep it safe and retry later
         await enqueue(file, hash, isImage); setStage("queued");
+      } else if ((e as { cancelled?: boolean }).cancelled) { setStage("idle"); setError("Upload cancelled. Your file is still selected; nothing was saved.");
       } else { setError(e instanceof Error ? e.message : "Upload failed."); setStage("error"); }
     }
   }
@@ -126,6 +132,11 @@ export default function UploadPage() {
             <div className="flex flex-wrap justify-center gap-3 mt-5">
               <button className="btn" onClick={() => fileInput.current?.click()} disabled={stage === "uploading" || stage === "processing"}>Choose file</button>
               <button className="btn" onClick={() => camInput.current?.click()} disabled={stage === "uploading" || stage === "processing"}><Camera className="w-4 h-4" aria-hidden />Take photo</button>
+              {(stage === "uploading" || cap) && stage !== "complete" && (
+                <button className="btn" onClick={() => {
+                  if (stage === "uploading") currentXhr?.abort();
+                  else { setFile(null); setPreview(null); setCap(null); setError(null); setStage("idle"); }
+                }}>Cancel</button>)}
               <button className="btn-primary" onClick={() => run()} disabled={!file || capBusy || stage === "uploading" || stage === "processing" || cap?.quality.verdict === "poor"}>
                 {stage === "uploading" || stage === "processing" ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden />Processing…</> : "Process invoice"}</button>
             </div>

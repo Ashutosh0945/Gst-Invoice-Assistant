@@ -19,6 +19,8 @@ export interface Card {
 export interface CopilotReply {
   answer: string; answer_source: "ai" | "rules"; note: string | null; intent: string;
   context: Record<string, unknown>; facts: Record<string, unknown>; cards: Card[]; followups: string[];
+  evidence?: { period: string; data_sources: string[]; definition: string | null; records: Array<{ label: string; href: string }>;
+    response_categories: string[]; provenance: string; limitations: string };
 }
 export interface Stage { stage: string; status: "pass" | "warn" | "fail" | "na"; summary: string; evidence: Array<Record<string, unknown>> }
 export interface Investigation {

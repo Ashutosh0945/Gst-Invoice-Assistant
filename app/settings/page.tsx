@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Brain, CloudUpload, Download, Palette, RefreshCw, Trash2 } from "lucide-react";
 import { ai, type Feedback } from "@/lib/ai";
-import { listQueue, onQueueChange, processQueue, removeItem, retryNow, type QueueItem } from "@/lib/offline-queue";
+import { clearLocalData, listQueue, onQueueChange, processQueue, removeItem, retryNow, type QueueItem } from "@/lib/offline-queue";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Settings() {
@@ -41,6 +41,12 @@ export default function Settings() {
             {q.lastError && <span className="text-xs text-ink-faint w-full">{q.lastError}</span>}
             <button className="btn py-1" onClick={() => retryNow(q.hash)}>Retry</button>
             <button className="btn py-1" aria-label={`Remove ${q.name}`} onClick={() => removeItem(q.hash)}><Trash2 className="w-4 h-4" /></button></li>)}</ul>)}</section>
+
+      <section className="neu-card p-5 mt-6"><h2 className="font-bold">Data on this device</h2>
+        <p className="text-sm text-ink-soft mt-2">Queued invoices, message drafts and cached pages are stored in this browser only. Clear them on a shared computer.
+          Invoices already uploaded are safe on the server.</p>
+        <button className="btn mt-3" onClick={async () => { if (confirm("Remove all GST Desk data stored on this device? Queued uploads that haven't synced will be lost.")) { await clearLocalData(); location.reload(); } }}>
+          Clear data on this device</button></section>
 
       <section className="neu-card p-5 mt-6"><h2 className="font-bold flex items-center gap-2"><Brain className="w-5 h-5 text-accent-soft" aria-hidden />Learning from corrections</h2>
         {!fb ? <p className="text-sm text-ink-soft mt-2">Loading…</p> : <>

@@ -11,6 +11,9 @@ Outcomes for each 2B line:
   DATE_MISMATCH    matched, amounts agree, dates differ
   AMOUNT_MISMATCH  matched on number, but taxable value or tax differ beyond tolerance
   MISSING_IN_BOOKS the supplier reported it; you have no such invoice
+  GSTIN_MISMATCH   same number, date and amounts as a register invoice, but a different supplier GSTIN
+  REVIEW_REQUIRED  two or more register invoices fit equally well -> never auto-matched; a human decides
+  POTENTIAL_DUPLICATE the same supplier invoice appears more than once in this GSTR-2B
 And for each register invoice in the return period with no partner:
   MISSING_IN_2B    you recorded it; the supplier has not reported it -> ITC at risk
 """
@@ -42,6 +45,8 @@ class MatchResult:
     status: str
     score: float | None
     notes: str | None
+    mismatch_fields: list | None = None
+    candidates: list | None = None
 
 
 def normalize_invoice_number(s: str | None) -> str:
@@ -75,7 +80,12 @@ def number_similarity(a: str | None, b: str | None) -> float:
     if na == nb:
         return 1.0
     edit = 1 - _osa_distance(na, nb) / max(len(na), len(nb))
-    return max(edit, SequenceMatcher(None, na, nb).ratio())
+    try:
+        from rapidfuzz import fuzz
+        rf = fuzz.ratio(na, nb) / 100
+    except ImportError:
+        rf = SequenceMatcher(None, na, nb).ratio()
+    return max(edit, rf)
 
 
 def _inr(v: Decimal | None) -> str:
@@ -123,27 +133,70 @@ def reconcile(twob: list[TwoBInvoice], books: list[BookInvoice], *, period_start
                 candidates.append((score, i, b))
     candidates.sort(key=lambda c: (-c[0], c[1]))
 
-    used_books: set = set()
+    # Stage D (ambiguity): if a 2B line has 2+ equally good register candidates with agreeing amounts,
+    # don't guess -- send it to review with the candidates listed.
     results: dict[int, MatchResult] = {}
+    by_line: dict[int, list] = {}
+    for sc, i, b in candidates:
+        by_line.setdefault(i, []).append((sc, b))
+    for i, cands in by_line.items():
+        good = [(sc, b) for sc, b in cands if amounts_ok(twob[i], b)]
+        if len(good) >= 2 and good[0][0] - good[1][0] <= 0.02:
+            results[i] = MatchResult(i, None, "REVIEW_REQUIRED", round(good[0][0], 4),
+                                     f"{len(good)} invoices in your books fit this GSTR-2B line equally well",
+                                     candidates=[{"invoice_id": str(b.id), "invoice_number": b.invoice_number, "score": round(sc, 4)} for sc, b in good[:5]])
+    # Potential duplicates inside the statement itself (same supplier GSTIN + same normalised number).
+    seen: dict[tuple, int] = {}
+    for i, t in enumerate(twob):
+        k = (t.supplier_gstin.upper(), normalize_invoice_number(t.invoice_number))
+        if k in seen and k[1]:
+            results[i] = MatchResult(i, None, "POTENTIAL_DUPLICATE", None,
+                                     f"Same supplier invoice appears earlier in this GSTR-2B (line {seen[k] + 1})")
+        else:
+            seen[k] = i
+
+    used_books: set = set()
     for score, i, b in candidates:
         if i in results or b.id in used_books:
             continue
         t = twob[i]
         used_books.add(b.id)
         notes: list[str] = []
-        if not amounts_ok(t, b):
+        fields = []
+        if not _close(t.taxable_value, b.taxable_value, amount_tolerance):
+            fields.append("taxable_value")
+        if not _close(t.total_tax, b.total_tax, amount_tolerance):
+            fields.append("total_tax")
+        if fields:
             status = "AMOUNT_MISMATCH"
             notes.append(f"GSTR-2B shows {_inr(t.taxable_value)} + {_inr(t.total_tax)} tax; "
                          f"your books show {_inr(b.taxable_value)} + {_inr(b.total_tax)} tax")
         elif score < 1.0:
             status = "FUZZY_MATCHED"
+            fields.append("invoice_number")
             notes.append(f"Invoice number is {t.invoice_number} in GSTR-2B but {b.invoice_number} in your books")
         elif t.invoice_date and b.invoice_date and t.invoice_date != b.invoice_date:
             status = "DATE_MISMATCH"
+            fields.append("invoice_date")
             notes.append(f"GSTR-2B date {t.invoice_date:%d %b %Y}; your books {b.invoice_date:%d %b %Y}")
         else:
             status = "MATCHED"
-        results[i] = MatchResult(i, b.id, status, round(score, 4), "; ".join(notes) or None)
+        results[i] = MatchResult(i, b.id, status, round(score, 4), "; ".join(notes) or None, mismatch_fields=fields or None)
+
+    # GSTIN mismatch: unmatched 2B lines whose number, date and amounts match a register invoice under ANOTHER GSTIN.
+    for i, t in enumerate(twob):
+        if i in results:
+            continue
+        for b in books:
+            if b.id in used_books or not b.vendor_gstin or b.vendor_gstin.upper() == t.supplier_gstin.upper():
+                continue
+            if normalize_invoice_number(b.invoice_number) == normalize_invoice_number(t.invoice_number) and amounts_ok(t, b) \
+                    and (not t.invoice_date or not b.invoice_date or t.invoice_date == b.invoice_date):
+                results[i] = MatchResult(i, b.id, "GSTIN_MISMATCH", 1.0,
+                                         f"Same invoice under a different GSTIN: GSTR-2B {t.supplier_gstin}, your books {b.vendor_gstin}",
+                                         mismatch_fields=["supplier_gstin"])
+                used_books.add(b.id)
+                break
 
     out = [results.get(i) or MatchResult(i, None, "MISSING_IN_BOOKS", None,
                                          "Supplier reported this invoice but it is not in your register")

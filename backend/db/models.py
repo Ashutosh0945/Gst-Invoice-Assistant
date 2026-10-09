@@ -11,7 +11,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
-    Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric,
+    Boolean, Date, DateTime, LargeBinary, Enum, ForeignKey, Index, Integer, Numeric,
     String, Text, UniqueConstraint, func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -296,6 +296,13 @@ class Gstr2bRecord(Base):
     matched_invoice_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="SET NULL"))
     match_score: Mapped[float | None] = mapped_column(Numeric(5, 4))
     match_notes: Mapped[str | None] = mapped_column(Text)
+    mismatch_fields: Mapped[list | None] = mapped_column(JSONType)          # e.g. ["taxable_value", "total_tax"]
+    candidates: Mapped[list | None] = mapped_column(JSONType)               # ambiguous candidates sent to review
+    resolution_status: Mapped[str | None] = mapped_column(String(16))       # open | under_review | resolved
+    resolution_note: Mapped[str | None] = mapped_column(Text)
+    assigned_to: Mapped[str | None] = mapped_column(String(255))
+    resolved_by: Mapped[str | None] = mapped_column(String(255))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     import_: Mapped["Gstr2bImport"] = relationship(back_populates="records")
 
@@ -355,3 +362,112 @@ class AccessEvent(Base):
     resource_id: Mapped[str | None] = mapped_column(String(64))
     status_code: Mapped[int] = mapped_column(Integer)
     user_agent: Mapped[str | None] = mapped_column(String(120))
+
+
+# ============================================================================= v0.6 additions (all new; nothing existing changed)
+class Document(Base):
+    """Original upload and the OCR-ready copy, so the original is always available for review."""
+    __tablename__ = "documents"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    invoice_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))                 # original | ocr_ready
+    content_type: Mapped[str] = mapped_column(String(64))
+    filename: Mapped[str | None] = mapped_column(String(500))
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UploadReceipt(Base):
+    """Idempotency: the same Idempotency-Key (client file hash) never creates a second invoice."""
+    __tablename__ = "upload_receipts"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    invoice_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Investigation(Base):
+    __tablename__ = "investigations"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    invoice_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), unique=True)
+    status: Mapped[str] = mapped_column(String(16), default="open")            # open | under_review | resolved
+    decision: Mapped[str | None] = mapped_column(String(32))                   # accepted | rejected | corrected | escalated
+    decision_note: Mapped[str | None] = mapped_column(Text)
+    decided_by: Mapped[str | None] = mapped_column(String(255))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class InvestigationNote(Base):
+    __tablename__ = "investigation_notes"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    invoice_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), index=True)
+    author: Mapped[str] = mapped_column(String(255))
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DuplicateCandidate(Base):
+    """A suspected duplicate pair. Never deletes or merges anything; a human confirms or dismisses."""
+    __tablename__ = "duplicate_candidates"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    invoice_a: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), index=True)
+    invoice_b: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), index=True)
+    tier: Mapped[str] = mapped_column(String(16))                  # exact | likely | possible
+    score: Mapped[float] = mapped_column(Numeric(5, 4))            # similarity score, NOT a calibrated probability
+    signals: Mapped[dict | None] = mapped_column(JSONType)
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)   # open | confirmed | dismissed
+    decided_by: Mapped[str | None] = mapped_column(String(255))
+    decision_note: Mapped[str | None] = mapped_column(Text)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MlModel(Base):
+    """Versioned model artifacts + metadata (training is an explicit action, never per request)."""
+    __tablename__ = "ml_models"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    name: Mapped[str] = mapped_column(String(64), index=True)
+    version: Mapped[str] = mapped_column(String(32))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    params: Mapped[dict | None] = mapped_column(JSONType)
+    metrics: Mapped[dict | None] = mapped_column(JSONType)
+    artifact: Mapped[dict | None] = mapped_column(JSONType)
+    trained_on: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AnomalyScore(Base):
+    __tablename__ = "anomaly_scores"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    invoice_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("invoices.id", ondelete="CASCADE"), index=True)
+    model_version: Mapped[str] = mapped_column(String(32))
+    score: Mapped[float] = mapped_column(Numeric(8, 5))             # Isolation Forest score: higher = more unusual (NOT a probability)
+    rank_pct: Mapped[float] = mapped_column(Numeric(6, 3))          # percentile among scored invoices
+    priority: Mapped[str] = mapped_column(String(12))               # high | medium | low
+    signals: Mapped[list | None] = mapped_column(JSONType)
+    data_sufficiency: Mapped[str] = mapped_column(String(16))       # sufficient | limited | insufficient
+    review_status: Mapped[str] = mapped_column(String(16), default="open")   # open | reviewed | dismissed | confirmed
+    review_note: Mapped[str | None] = mapped_column(Text)
+    reviewed_by: Mapped[str | None] = mapped_column(String(255))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ForecastRun(Base):
+    __tablename__ = "forecast_runs"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    series: Mapped[str] = mapped_column(String(48), index=True)
+    status: Mapped[str] = mapped_column(String(24))                 # ok | insufficient_history
+    model: Mapped[str | None] = mapped_column(String(48))
+    result: Mapped[dict | None] = mapped_column(JSONType)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

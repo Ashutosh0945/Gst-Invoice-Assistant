@@ -1,0 +1,7 @@
+{
+  "model": "LayoutKIE-CRF",
+  "layouts": 48,
+  "docs": 960,
+  "seconds": 149.2,
+  "file": "gst_layoutkie_crf_v2.npz"
+}

@@ -1,0 +1,59 @@
+{
+  "target": "A",
+  "test_docs": 30,
+  "zero_shot_synth": {
+    "field_acc": 0.2782,
+    "perfect_docs": 0.0,
+    "n": 30
+  },
+  "multi_source_synth+B": {
+    "field_acc": 0.35,
+    "perfect_docs": 0.0,
+    "n": 30
+  },
+  "few_shot": {
+    "5": {
+      "field_acc": 0.8654,
+      "perfect_docs": 0.7667,
+      "n": 30
+    },
+    "10": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "20": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "40": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    }
+  },
+  "target_only": {
+    "5": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "10": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "20": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "40": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    }
+  },
+  "seconds": 69.5
+}

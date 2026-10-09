@@ -1,0 +1,236 @@
+{
+  "by_layouts": {
+    "1": {
+      "train": {
+        "tokens": 34331,
+        "seconds": 19.7
+      },
+      "unseen": {
+        "header_acc": 0.5962,
+        "item_acc": 0.2394,
+        "field_acc": 0.3366,
+        "perfect_docs": 0.0,
+        "ms_per_doc": 7.49,
+        "docs": 64,
+        "per_field": {
+          "vendor_gstin": 0.7188,
+          "buyer_gstin": 0.9844,
+          "invoice_number": 0.5312,
+          "invoice_date": 0.875,
+          "subtotal": 0.3125,
+          "total_igst": 0.1471,
+          "grand_total": 0.6094,
+          "hsn_sac": 0.338,
+          "quantity": 0.3709,
+          "unit_price": 0.2347,
+          "taxable_value": 0.1174,
+          "gst_rate": 0.2582,
+          "line_total": 0.1174,
+          "total_cgst": 0.4,
+          "total_sgst": 0.3333
+        }
+      }
+    },
+    "2": {
+      "train": {
+        "tokens": 35832,
+        "seconds": 21.8
+      },
+      "unseen": {
+        "header_acc": 0.6611,
+        "item_acc": 0.7653,
+        "field_acc": 0.7369,
+        "perfect_docs": 0.0,
+        "ms_per_doc": 7.84,
+        "docs": 64,
+        "per_field": {
+          "vendor_gstin": 0.6875,
+          "buyer_gstin": 0.875,
+          "invoice_number": 0.75,
+          "invoice_date": 0.875,
+          "subtotal": 0.5,
+          "total_igst": 0.0294,
+          "grand_total": 0.6406,
+          "hsn_sac": 0.784,
+          "quantity": 0.7934,
+          "unit_price": 0.7559,
+          "taxable_value": 0.7512,
+          "gst_rate": 0.831,
+          "line_total": 0.6761,
+          "total_cgst": 0.7667,
+          "total_sgst": 0.5
+        }
+      }
+    },
+    "4": {
+      "train": {
+        "tokens": 35650,
+        "seconds": 22.1
+      },
+      "unseen": {
+        "header_acc": 0.8828,
+        "item_acc": 0.8357,
+        "field_acc": 0.8485,
+        "perfect_docs": 0.2031,
+        "ms_per_doc": 7.73,
+        "docs": 64,
+        "per_field": {
+          "vendor_gstin": 1.0,
+          "buyer_gstin": 1.0,
+          "invoice_number": 0.9844,
+          "invoice_date": 0.9375,
+          "subtotal": 0.5938,
+          "total_igst": 0.7941,
+          "grand_total": 0.9062,
+          "hsn_sac": 0.8685,
+          "quantity": 0.8732,
+          "unit_price": 0.8357,
+          "taxable_value": 0.8404,
+          "gst_rate": 0.8967,
+          "line_total": 0.6995,
+          "total_cgst": 0.9,
+          "total_sgst": 0.7
+        }
+      }
+    },
+    "8": {
+      "train": {
+        "tokens": 35676,
+        "seconds": 22.1
+      },
+      "unseen": {
+        "header_acc": 0.9205,
+        "item_acc": 0.9241,
+        "field_acc": 0.9231,
+        "perfect_docs": 0.5,
+        "ms_per_doc": 8.45,
+        "docs": 64,
+        "per_field": {
+          "vendor_gstin": 1.0,
+          "buyer_gstin": 0.8594,
+          "invoice_number": 0.9844,
+          "invoice_date": 1.0,
+          "subtotal": 0.6719,
+          "total_igst": 1.0,
+          "grand_total": 0.9062,
+          "hsn_sac": 0.9343,
+          "quantity": 0.939,
+          "unit_price": 0.9108,
+          "taxable_value": 0.9155,
+          "gst_rate": 0.9484,
+          "line_total": 0.8967,
+          "total_cgst": 0.9667,
+          "total_sgst": 1.0
+        }
+      }
+    },
+    "16": {
+      "train": {
+        "tokens": 37008,
+        "seconds": 22.9
+      },
+      "unseen": {
+        "header_acc": 0.9812,
+        "item_acc": 0.9304,
+        "field_acc": 0.9442,
+        "perfect_docs": 0.75,
+        "ms_per_doc": 7.83,
+        "docs": 64,
+        "per_field": {
+          "vendor_gstin": 1.0,
+          "buyer_gstin": 0.8906,
+          "invoice_number": 1.0,
+          "invoice_date": 1.0,
+          "subtotal": 1.0,
+          "total_igst": 0.9706,
+          "grand_total": 1.0,
+          "hsn_sac": 0.9437,
+          "quantity": 0.9484,
+          "unit_price": 0.9202,
+          "taxable_value": 0.9249,
+          "gst_rate": 0.9484,
+          "line_total": 0.8967,
+          "total_cgst": 0.9667,
+          "total_sgst": 1.0
+        }
+      }
+    }
+  },
+  "rules_reference": {
+    "Regex rules": {
+      "header_acc": 0.7113,
+      "item_acc": 0.1174,
+      "field_acc": 0.279,
+      "perfect_docs": 0.0,
+      "ms_per_doc": 0.76,
+      "docs": 64,
+      "per_field": {
+        "vendor_gstin": 1.0,
+        "buyer_gstin": 1.0,
+        "invoice_number": 0.875,
+        "invoice_date": 0.875,
+        "subtotal": 0.375,
+        "total_igst": 0.0882,
+        "grand_total": 0.75,
+        "hsn_sac": 0.1174,
+        "quantity": 0.1174,
+        "unit_price": 0.1174,
+        "taxable_value": 0.1174,
+        "gst_rate": 0.1174,
+        "line_total": 0.1174,
+        "total_cgst": 0.3333,
+        "total_sgst": 0.5
+      }
+    },
+    "Layout heuristic": {
+      "header_acc": 0.6736,
+      "item_acc": 0.3498,
+      "field_acc": 0.4379,
+      "perfect_docs": 0.0,
+      "ms_per_doc": 0.94,
+      "docs": 64,
+      "per_field": {
+        "vendor_gstin": 1.0,
+        "buyer_gstin": 0.9062,
+        "invoice_number": 0.875,
+        "invoice_date": 0.625,
+        "subtotal": 0.375,
+        "total_igst": 0.1471,
+        "grand_total": 0.875,
+        "hsn_sac": 0.5962,
+        "quantity": 0.3333,
+        "unit_price": 0.3005,
+        "taxable_value": 0.2629,
+        "gst_rate": 0.2488,
+        "line_total": 0.3568,
+        "total_cgst": 0.2,
+        "total_sgst": 0.4333
+      }
+    },
+    "Rules ensemble": {
+      "header_acc": 0.7427,
+      "item_acc": 0.2762,
+      "field_acc": 0.4032,
+      "perfect_docs": 0.0,
+      "ms_per_doc": 1.5,
+      "docs": 64,
+      "per_field": {
+        "vendor_gstin": 1.0,
+        "buyer_gstin": 1.0,
+        "invoice_number": 0.875,
+        "invoice_date": 0.7969,
+        "subtotal": 0.375,
+        "total_igst": 0.2059,
+        "grand_total": 0.9531,
+        "hsn_sac": 0.3897,
+        "quantity": 0.2347,
+        "unit_price": 0.2347,
+        "taxable_value": 0.2629,
+        "gst_rate": 0.2723,
+        "line_total": 0.2629,
+        "total_cgst": 0.3,
+        "total_sgst": 0.6333
+      }
+    }
+  }
+}

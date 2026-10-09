@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, CircleAlert, CircleMinus, Loader2, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { ai, inr, type Investigation } from "@/lib/ai";
+import { InvestigationWorkspace } from "@/components/InvestigationWorkspace";
 
 const ICON = { pass: [CheckCircle2, "text-good", "Passed"], warn: [TriangleAlert, "text-warn", "Check"], fail: [CircleAlert, "text-bad", "Problem"], na: [CircleMinus, "text-ink-faint", "Not applicable"] } as const;
 
@@ -30,7 +31,7 @@ function Inner() {
   const inv = data.invoice;
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-6xl">
       <Link href={`/invoices/${inv.id}`} className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink-strong mt-6"><ArrowLeft className="w-4 h-4" aria-hidden />Back to invoice</Link>
       <header className="pt-4 pb-6">
         <h1 className="text-[28px] font-extrabold tracking-tight">Investigation · {inv.invoice_number || "Invoice"}</h1>
@@ -59,6 +60,9 @@ function Inner() {
         {data.stages.some((s) => s.stage === "Purchase order" && (s.status === "fail" || s.status === "warn")) && <PoExplain id={inv.id} />}
       </div>
 
+      <InvestigationWorkspace id={inv.id} />
+
+      <h2 className="font-bold text-lg mb-3">All checks, stage by stage</h2>
       <ol className="relative border-l-2 border-base-line ml-3 space-y-4">
         {data.stages.map((s) => {
           const [Icon, cls, label] = ICON[s.status];

@@ -1,0 +1,152 @@
+{
+  "scan": {
+    "Regex rules": {
+      "field_acc": 0.2908,
+      "header_acc": 0.6538,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Layout heuristic": {
+      "field_acc": 0.3923,
+      "header_acc": 0.5495,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Rules ensemble": {
+      "field_acc": 0.3338,
+      "header_acc": 0.6484,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Layout heuristic + normaliser": {
+      "field_acc": 0.4215,
+      "header_acc": 0.6538,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Regex rules + normaliser": {
+      "field_acc": 0.3031,
+      "header_acc": 0.6978,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Linear model (ablation)": {
+      "field_acc": 0.8154,
+      "header_acc": 0.956,
+      "perfect_docs": 0.4167,
+      "docs": 24
+    },
+    "LayoutKIE-CRF (ours)": {
+      "field_acc": 0.8523,
+      "header_acc": 0.967,
+      "perfect_docs": 0.5,
+      "docs": 24
+    },
+    "LayoutKIE-CRF (no normaliser)": {
+      "field_acc": 0.7585,
+      "header_acc": 0.6319,
+      "perfect_docs": 0.0417,
+      "docs": 24
+    }
+  },
+  "photo": {
+    "Regex rules": {
+      "field_acc": 0.1,
+      "header_acc": 0.3571,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Layout heuristic": {
+      "field_acc": 0.2954,
+      "header_acc": 0.4451,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Rules ensemble": {
+      "field_acc": 0.2323,
+      "header_acc": 0.456,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Layout heuristic + normaliser": {
+      "field_acc": 0.3185,
+      "header_acc": 0.5549,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Regex rules + normaliser": {
+      "field_acc": 0.1169,
+      "header_acc": 0.4176,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Linear model (ablation)": {
+      "field_acc": 0.2954,
+      "header_acc": 0.7967,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "LayoutKIE-CRF (ours)": {
+      "field_acc": 0.3138,
+      "header_acc": 0.8187,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "LayoutKIE-CRF (no normaliser)": {
+      "field_acc": 0.1923,
+      "header_acc": 0.3626,
+      "perfect_docs": 0.0,
+      "docs": 24
+    }
+  },
+  "photo+capture": {
+    "Regex rules": {
+      "field_acc": 0.2031,
+      "header_acc": 0.5769,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Layout heuristic": {
+      "field_acc": 0.3585,
+      "header_acc": 0.478,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Rules ensemble": {
+      "field_acc": 0.2585,
+      "header_acc": 0.5824,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Layout heuristic + normaliser": {
+      "field_acc": 0.3877,
+      "header_acc": 0.5824,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Regex rules + normaliser": {
+      "field_acc": 0.2169,
+      "header_acc": 0.6264,
+      "perfect_docs": 0.0,
+      "docs": 24
+    },
+    "Linear model (ablation)": {
+      "field_acc": 0.8185,
+      "header_acc": 0.9231,
+      "perfect_docs": 0.125,
+      "docs": 24
+    },
+    "LayoutKIE-CRF (ours)": {
+      "field_acc": 0.8446,
+      "header_acc": 0.9286,
+      "perfect_docs": 0.125,
+      "docs": 24
+    },
+    "LayoutKIE-CRF (no normaliser)": {
+      "field_acc": 0.7292,
+      "header_acc": 0.5165,
+      "perfect_docs": 0.0,
+      "docs": 24
+    }
+  }
+}

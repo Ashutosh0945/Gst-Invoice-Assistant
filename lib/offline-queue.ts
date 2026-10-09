@@ -66,7 +66,8 @@ export async function processQueue(onDone?: (item: QueueItem, invoiceNumber?: st
       try {
         const form = new FormData();
         form.append("file", new File([item.blob], item.name, { type: item.type }));
-        const res = await fetch(`/api/v1/invoices${item.optimize ? "?optimize=true" : ""}`, { method: "POST", body: form });
+        const res = await fetch(`/api/v1/invoices${item.optimize ? "?optimize=true" : ""}`, { method: "POST", body: form,
+          headers: { "Idempotency-Key": `sha256-${item.hash}` } });   // a retry can never create a second invoice
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : `Server error ${res.status}`);
         await markUploaded(item.hash, data.id);
@@ -91,4 +92,15 @@ export async function retryNow(hash: string) {
   const item = await tx<QueueItem | undefined>(STORE, "readonly", (s) => s.get(hash) as IDBRequest<QueueItem | undefined>);
   if (item) { await tx(STORE, "readwrite", (s) => s.put({ ...item, status: "pending", nextTry: 0, attempts: Math.min(item.attempts, 5) })); changed(); }
   return processQueue();
+}
+
+
+/** Removes everything GST Desk keeps on this device (queued files, drafts, cached pages). */
+export async function clearLocalData(): Promise<void> {
+  await new Promise<void>((resolve) => { const r = indexedDB.deleteDatabase(DB); r.onsuccess = r.onerror = r.onblocked = () => resolve(); });
+  try {
+    Object.keys(localStorage).filter((k) => k.startsWith("gstdesk-")).forEach((k) => localStorage.removeItem(k));
+  } catch { /* private mode */ }
+  if ("caches" in window) for (const k of await caches.keys()) await caches.delete(k);
+  changed();
 }

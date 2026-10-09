@@ -1,0 +1,14 @@
+{
+  "24 layouts (v1)": {
+    "train": {
+      "tokens": 111258,
+      "seconds": 69.0
+    }
+  },
+  "48 layouts (v1+v2)": {
+    "train": {
+      "tokens": 109565,
+      "seconds": 69.8
+    }
+  }
+}

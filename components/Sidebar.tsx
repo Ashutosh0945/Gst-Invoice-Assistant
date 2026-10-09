@@ -34,6 +34,7 @@ const GROUPS: Group[] = [
     key: "compliance", label: "GST compliance", icon: ShieldCheck, tone: "bg-good/90",
     items: [
       { href: "/gstr2b", label: "GSTR-2B match", icon: GitCompareArrows },
+      { href: "/gstr2b/queue", label: "2B work queue", icon: ListChecks },
       { href: "/itc", label: "Input tax credit", icon: BadgeIndianRupee },
       { href: "/einvoice", label: "E-invoice checks", icon: QrCode },
     ],

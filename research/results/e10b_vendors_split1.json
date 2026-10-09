@@ -1,0 +1,142 @@
+{
+  "split": 1,
+  "labelled_templates": [
+    "B",
+    "synth:46",
+    "synth:36",
+    "A",
+    "synth:42",
+    "synth:41",
+    "synth:39"
+  ],
+  "unlabelled_templates": [
+    "synth:44",
+    "synth:43",
+    "synth:47",
+    "synth:40",
+    "synth:37",
+    "synth:45",
+    "synth:38"
+  ],
+  "n_test_unseen": 28,
+  "n_test_seen": 28,
+  "by_k": {
+    "7": {
+      "synthetic+labelled": {
+        "unseen_vendors": {
+          "field_acc": 1.0,
+          "perfect_docs": 1.0,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.9313,
+          "perfect_docs": 0.8214,
+          "n": 28
+        }
+      },
+      "labelled_only": {
+        "unseen_vendors": {
+          "field_acc": 0.6761,
+          "perfect_docs": 0.0,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.7386,
+          "perfect_docs": 0.3214,
+          "n": 28
+        }
+      }
+    },
+    "14": {
+      "synthetic+labelled": {
+        "unseen_vendors": {
+          "field_acc": 1.0,
+          "perfect_docs": 1.0,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.9422,
+          "perfect_docs": 0.8214,
+          "n": 28
+        }
+      },
+      "labelled_only": {
+        "unseen_vendors": {
+          "field_acc": 0.7401,
+          "perfect_docs": 0.1786,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.8048,
+          "perfect_docs": 0.7143,
+          "n": 28
+        }
+      }
+    },
+    "28": {
+      "synthetic+labelled": {
+        "unseen_vendors": {
+          "field_acc": 1.0,
+          "perfect_docs": 1.0,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.9964,
+          "perfect_docs": 0.9286,
+          "n": 28
+        }
+      },
+      "labelled_only": {
+        "unseen_vendors": {
+          "field_acc": 0.9488,
+          "perfect_docs": 0.1429,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.9988,
+          "perfect_docs": 0.9643,
+          "n": 28
+        }
+      }
+    },
+    "56": {
+      "synthetic+labelled": {
+        "unseen_vendors": {
+          "field_acc": 1.0,
+          "perfect_docs": 1.0,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.9976,
+          "perfect_docs": 0.9643,
+          "n": 28
+        }
+      },
+      "labelled_only": {
+        "unseen_vendors": {
+          "field_acc": 0.977,
+          "perfect_docs": 0.4286,
+          "n": 28
+        },
+        "labelled_vendors": {
+          "field_acc": 0.9988,
+          "perfect_docs": 0.9643,
+          "n": 28
+        }
+      }
+    }
+  },
+  "synthetic_only": {
+    "unseen_vendors": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 28
+    },
+    "labelled_vendors": {
+      "field_acc": 0.9024,
+      "perfect_docs": 0.6786,
+      "n": 28
+    }
+  },
+  "seconds": 64.9
+}

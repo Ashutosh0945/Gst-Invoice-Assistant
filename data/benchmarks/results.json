@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-23T20:04:26+00:00",
-  "documents_per_layout": 40,
+  "generated_at": "2026-10-08T07:13:48+00:00",
+  "documents_per_layout": 30,
   "layouts": [
     "A (portrait)",
     "B (landscape)"
@@ -27,16 +27,16 @@
   "layoutlm_model": null,
   "extractors": {
     "Regex baseline": {
-      "overall_field_accuracy": 0.6515,
+      "overall_field_accuracy": 0.6494,
       "layouts": {
         "A (portrait)": {
-          "documents": 40,
+          "documents": 30,
           "field_accuracy": 1.0,
           "header_accuracy": 1.0,
           "line_item_accuracy": 1.0,
           "item_count_accuracy": 1.0,
           "perfect_documents": 1.0,
-          "ms_per_document": 0.5,
+          "ms_per_document": 0.7,
           "per_field": {
             "vendor_gstin": 1.0,
             "buyer_gstin": 1.0,
@@ -55,13 +55,13 @@
           }
         },
         "B (landscape)": {
-          "documents": 40,
-          "field_accuracy": 0.303,
+          "documents": 30,
+          "field_accuracy": 0.2988,
           "header_accuracy": 1.0,
           "line_item_accuracy": 0.0,
           "item_count_accuracy": 0.0,
           "perfect_documents": 0.0,
-          "ms_per_document": 0.5,
+          "ms_per_document": 0.6,
           "per_field": {
             "vendor_gstin": 1.0,
             "buyer_gstin": 1.0,
@@ -83,16 +83,16 @@
       }
     },
     "Layout heuristic": {
-      "overall_field_accuracy": 0.5996,
+      "overall_field_accuracy": 0.602,
       "layouts": {
         "A (portrait)": {
-          "documents": 40,
-          "field_accuracy": 0.1991,
+          "documents": 30,
+          "field_accuracy": 0.204,
           "header_accuracy": 0.625,
-          "line_item_accuracy": 0.0369,
+          "line_item_accuracy": 0.0405,
           "item_count_accuracy": 1.0,
           "perfect_documents": 0.0,
-          "ms_per_document": 0.8,
+          "ms_per_document": 1.0,
           "per_field": {
             "vendor_gstin": 1.0,
             "buyer_gstin": 1.0,
@@ -102,22 +102,22 @@
             "total_cgst": 0.0,
             "total_sgst": 0.0,
             "grand_total": 1.0,
-            "hsn_sac": 0.0857,
+            "hsn_sac": 0.0971,
             "quantity": 0.0,
             "unit_price": 0.0,
-            "taxable_value": 0.1357,
+            "taxable_value": 0.1456,
             "gst_rate": 0.0,
             "line_total": 0.0
           }
         },
         "B (landscape)": {
-          "documents": 40,
+          "documents": 30,
           "field_accuracy": 1.0,
           "header_accuracy": 1.0,
           "line_item_accuracy": 1.0,
           "item_count_accuracy": 1.0,
           "perfect_documents": 1.0,
-          "ms_per_document": 0.9,
+          "ms_per_document": 1.1,
           "per_field": {
             "vendor_gstin": 1.0,
             "buyer_gstin": 1.0,
@@ -142,13 +142,13 @@
       "overall_field_accuracy": 1.0,
       "layouts": {
         "A (portrait)": {
-          "documents": 40,
+          "documents": 30,
           "field_accuracy": 1.0,
           "header_accuracy": 1.0,
           "line_item_accuracy": 1.0,
           "item_count_accuracy": 1.0,
           "perfect_documents": 1.0,
-          "ms_per_document": 1.2,
+          "ms_per_document": 11.7,
           "per_field": {
             "vendor_gstin": 1.0,
             "buyer_gstin": 1.0,
@@ -167,13 +167,13 @@
           }
         },
         "B (landscape)": {
-          "documents": 40,
+          "documents": 30,
           "field_accuracy": 1.0,
           "header_accuracy": 1.0,
           "line_item_accuracy": 1.0,
           "item_count_accuracy": 1.0,
           "perfect_documents": 1.0,
-          "ms_per_document": 1.3,
+          "ms_per_document": 16.4,
           "per_field": {
             "vendor_gstin": 1.0,
             "buyer_gstin": 1.0,
@@ -190,6 +190,62 @@
             "taxable_value": 1.0,
             "gst_rate": 1.0,
             "line_total": 1.0
+          }
+        }
+      }
+    },
+    "GST-LayoutKIE (trained)": {
+      "overall_field_accuracy": 0.5421,
+      "layouts": {
+        "A (portrait)": {
+          "documents": 30,
+          "field_accuracy": 0.3019,
+          "header_accuracy": 0.8083,
+          "line_item_accuracy": 0.1052,
+          "item_count_accuracy": 0.0,
+          "perfect_documents": 0.0,
+          "ms_per_document": 10.6,
+          "per_field": {
+            "vendor_gstin": 1.0,
+            "buyer_gstin": 0.4667,
+            "invoice_number": 1.0,
+            "invoice_date": 1.0,
+            "subtotal": 1.0,
+            "total_cgst": 1.0,
+            "total_sgst": 0.0,
+            "grand_total": 1.0,
+            "hsn_sac": 0.3107,
+            "quantity": 0.3107,
+            "unit_price": 0.0,
+            "taxable_value": 0.0,
+            "gst_rate": 0.0097,
+            "line_total": 0.0
+          }
+        },
+        "B (landscape)": {
+          "documents": 30,
+          "field_accuracy": 0.7822,
+          "header_accuracy": 1.0,
+          "line_item_accuracy": 0.6894,
+          "item_count_accuracy": 0.5333,
+          "perfect_documents": 0.5333,
+          "ms_per_document": 13.6,
+          "per_field": {
+            "vendor_gstin": 1.0,
+            "buyer_gstin": 1.0,
+            "invoice_number": 1.0,
+            "invoice_date": 1.0,
+            "subtotal": 1.0,
+            "total_cgst": 1.0,
+            "total_sgst": 1.0,
+            "total_igst": 1.0,
+            "grand_total": 1.0,
+            "hsn_sac": 0.6818,
+            "quantity": 0.6932,
+            "unit_price": 0.6818,
+            "taxable_value": 0.6818,
+            "gst_rate": 0.8182,
+            "line_total": 0.5795
           }
         }
       }

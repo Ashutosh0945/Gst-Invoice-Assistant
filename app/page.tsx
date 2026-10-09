@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { ai, inr, inrShort, type Brief, type Kpis, type RiskItem } from "@/lib/ai";
 import { StackedBars } from "@/components/charts";
+import { ActionCenterExtras } from "@/components/V6Panels";
 
 const PERIODS: Array<[string, string]> = [["this_month", "This month"], ["last_month", "Last month"], ["this_fy", "This FY"], ["all", "All time"]];
 const SUGGEST = ["How much ITC is currently at risk?", "Which vendor has the most GST errors?", "Show invoices with GSTR-2B mismatches",
@@ -160,6 +161,8 @@ export default function CommandCenter() {
           )}
         </section>
       </div>
+
+      <ActionCenterExtras />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_420px] mt-6">
         <section className="neu-card p-5 min-w-0">

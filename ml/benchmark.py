@@ -89,6 +89,9 @@ def _extractors(model_path: str | None):
         "Rules ensemble": lambda pages: extract_rules_ensemble(
             [w for p in pages for w in p.native_words], to_pagedata(pages)),
     }
+    from backend.extraction import learned
+    if learned.is_available():
+        ex["GST-LayoutKIE (trained)"] = lambda pages: learned.extract([(w.text, w.bbox) for w in pages[0].native_words], pages[0].width, pages[0].height)
     if model_path:
         import os
 

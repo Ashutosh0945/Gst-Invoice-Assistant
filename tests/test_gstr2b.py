@@ -79,11 +79,39 @@ def test_one_book_invoice_never_matches_two_2b_lines():
                                     _inv("INV-1", "05-08-2026", 1000, 90, 90)]}))
     results, _ = reconcile(stmt.invoices, _books()[:1], period_start=stmt.period_start,
                            period_end=stmt.period_end, amount_tolerance=D("1"), fuzzy_threshold=0.80)
-    assert sorted(r.status for r in results) == ["MATCHED", "MISSING_IN_BOOKS"]
+    # invariant: the register invoice is used once; the repeated 2B line is flagged as a duplicate in the statement
+    assert sorted(r.status for r in results) == ["MATCHED", "POTENTIAL_DUPLICATE"]
+    assert sum(1 for r in results if r.book_id is not None) == 1
 
 
 def test_different_gstin_never_matches():
     stmt = parse_gstr2b(_twob({G2: [_inv("INV/1", "05-08-2026", 1000, 90, 90)]}))
     results, _ = reconcile(stmt.invoices, _books()[:1], period_start=stmt.period_start,
                            period_end=stmt.period_end, amount_tolerance=D("1"), fuzzy_threshold=0.80)
-    assert results[0].status == "MISSING_IN_BOOKS"
+    # never a match: flagged as a GSTIN mismatch for review (linked, but it doesn't count as "in 2B")
+    assert results[0].status == "GSTIN_MISMATCH" and results[0].mismatch_fields == ["supplier_gstin"]
+
+
+
+def test_ambiguous_candidates_go_to_review_not_auto_match():
+    stmt = parse_gstr2b(_twob({G1: [_inv("INV/77", "05-08-2026", 1000, 90, 90)]}))
+    books = [BookInvoice(11, G1, "INV-077", date(2026, 8, 5), D("1000.00"), D("180.00")),
+             BookInvoice(12, G1, "INV/0077", date(2026, 8, 5), D("1000.00"), D("180.00"))]
+    results, _ = reconcile(stmt.invoices, books, period_start=stmt.period_start, period_end=stmt.period_end,
+                           amount_tolerance=D("1"), fuzzy_threshold=0.80)
+    r = results[0]
+    assert r.status == "REVIEW_REQUIRED" and r.book_id is None and len(r.candidates) == 2
+
+
+def test_mismatch_fields_separate_tax_from_taxable():
+    stmt = parse_gstr2b(_twob({G1: [_inv("INV/1", "05-08-2026", 1000, 100, 100)]}))   # taxable equal, tax differs
+    results, _ = reconcile(stmt.invoices, _books()[:1], period_start=stmt.period_start, period_end=stmt.period_end,
+                           amount_tolerance=D("1"), fuzzy_threshold=0.80)
+    assert results[0].status == "AMOUNT_MISMATCH" and results[0].mismatch_fields == ["total_tax"]
+
+
+def test_matching_is_reproducible():
+    stmt = parse_gstr2b(_twob({G1: [_inv("INV/1", "05-08-2026", 1000, 90, 90), _inv("INV/2", "06-08-2026", 700, 63, 63)]}))
+    run = lambda: [(r.status, r.book_id, r.score) for r in reconcile(stmt.invoices, _books(), period_start=stmt.period_start,  # noqa: E731
+                   period_end=stmt.period_end, amount_tolerance=D("1"), fuzzy_threshold=0.80)[0]]
+    assert run() == run()

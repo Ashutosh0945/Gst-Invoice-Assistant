@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FlaskConical, Loader2, TrendingUp } from "lucide-react";
 import { ai, inr, type Forecast, type WhatIf } from "@/lib/ai";
 import { StackedBars } from "@/components/charts";
+import { ForecastPanel } from "@/components/V6Panels";
 
 export default function ForecastPage() {
   const [fc, setFc] = useState<Forecast | null>(null);
@@ -35,7 +36,9 @@ export default function ForecastPage() {
         <p className="text-ink-soft mt-1">Estimates and simulations only. They never change your records or statutory GST calculations.</p>
       </header>
 
-      <section className="neu-card p-5">
+      <h2 className="font-bold text-lg mb-3">Forecasts with model evaluation</h2>
+      <ForecastPanel />
+      <section className="neu-card p-5 mt-6">
         <h2 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-accent-soft" aria-hidden />GST forecast</h2>
         {!fc && !error && <div className="h-48 animate-pulse neu-inset mt-4" />}
         {fc && <>

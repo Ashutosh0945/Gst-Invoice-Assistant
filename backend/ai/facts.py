@@ -19,7 +19,7 @@ from backend.db.models import Gstr2bRecord, Invoice, ItcAssessment, Reconciliati
 
 ZERO = Decimal("0")
 STANDARD_RATES = {Decimal(x) for x in ("0", "0.1", "0.25", "1", "1.5", "3", "5", "6", "7.5", "12", "18", "28", "40")}
-TWO_B_MISMATCH = ("AMOUNT_MISMATCH", "MISSING_IN_BOOKS")
+TWO_B_MISMATCH = ("AMOUNT_MISMATCH", "MISSING_IN_BOOKS", "GSTIN_MISMATCH", "REVIEW_REQUIRED", "POTENTIAL_DUPLICATE")
 
 
 def money(v) -> float:

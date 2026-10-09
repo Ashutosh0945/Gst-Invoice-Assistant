@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -30,13 +30,28 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
 
 
 @router.post("/invoices", response_model=InvoiceDetailOut, status_code=201)
-def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depends(get_db)):
+def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depends(get_db),
+                   idempotency_key: str | None = Header(default=None, max_length=128)):
     """optimize=true (camera photos): the photo goes through the capture pipeline first and the
     OCR-ready image -- not the raw photo -- is passed to the existing OCR/extraction pipeline."""
+    from backend.db.models import Document, UploadReceipt
+    if idempotency_key:   # a retried upload (same client key) returns the invoice it already created
+        receipt = db.get(UploadReceipt, idempotency_key)
+        if receipt is not None:
+            existing = db.get(Invoice, receipt.invoice_id)
+            if existing is not None:
+                return existing
     suffix = (Path(file.filename or "invoice").suffix or ".pdf").lower()
+    allowed = {".pdf"} | IMAGE_SUFFIXES
+    if suffix not in allowed:
+        raise HTTPException(415, f"Unsupported file type '{suffix}'. Upload a PDF or an image (JPG, PNG, WEBP, TIFF).")
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         shutil.copyfileobj(file.file, tmp)
         tmp_path = Path(tmp.name)
+    raw_bytes = tmp_path.read_bytes()
+    if not raw_bytes:
+        tmp_path.unlink(missing_ok=True)
+        raise HTTPException(422, "The file is empty.")
     work_path, capture, capture_error = tmp_path, None, None
     try:
         if optimize and suffix in IMAGE_SUFFIXES:
@@ -66,10 +81,28 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
                        details={"steps": capture.steps, "quality": capture.quality, "original_filename": file.filename})
             db.commit()
             db.refresh(invoice)
+        # Keep the original (and the OCR-ready copy) so the document can be reviewed later.
+        import hashlib
+        db.add(Document(invoice_id=invoice.id, kind="original", content_type=file.content_type or "application/octet-stream",
+                        filename=file.filename, sha256=hashlib.sha256(raw_bytes).hexdigest(), size_bytes=len(raw_bytes), content=raw_bytes))
+        if work_path != tmp_path and work_path.exists():
+            ocr_bytes = work_path.read_bytes()
+            db.add(Document(invoice_id=invoice.id, kind="ocr_ready", content_type="image/png", filename=(file.filename or "") + " (OCR-ready)",
+                            sha256=hashlib.sha256(ocr_bytes).hexdigest(), size_bytes=len(ocr_bytes), content=ocr_bytes))
+        if idempotency_key:
+            db.add(UploadReceipt(key=idempotency_key, invoice_id=invoice.id))
+        db.commit()
+        db.refresh(invoice)
     finally:
         tmp_path.unlink(missing_ok=True)
         if work_path != tmp_path:
             work_path.unlink(missing_ok=True)
+    # ML / similarity checks run after the invoice is safely saved and can never fail the upload.
+    from backend.ml.anomaly import score_one_safely
+    from backend.ml.duplicates import scan_safely
+    scan_safely(db, invoice)
+    score_one_safely(db, invoice)
+    db.refresh(invoice)
     return invoice
 
 

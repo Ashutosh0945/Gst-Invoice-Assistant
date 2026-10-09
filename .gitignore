@@ -15,5 +15,5 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 data/samples/
-models/
+/models/
 data/layoutlm_dataset/

@@ -1,0 +1,181 @@
+{
+  "runs": 3,
+  "conditions": {
+    "0.0": {
+      "table": {
+        "Regex rules": {
+          "field_acc_mean": 0.2811,
+          "field_acc_std": 0.0089,
+          "field_acc_95ci": [
+            0.2459,
+            0.3184
+          ],
+          "perfect_mean": 0.0,
+          "perfect_std": 0.0,
+          "ms_per_doc": 0.94,
+          "docs": 240
+        },
+        "Layout heuristic": {
+          "field_acc_mean": 0.4486,
+          "field_acc_std": 0.0318,
+          "field_acc_95ci": [
+            0.4245,
+            0.472
+          ],
+          "perfect_mean": 0.0,
+          "perfect_std": 0.0,
+          "ms_per_doc": 1.15,
+          "docs": 240
+        },
+        "Rules ensemble": {
+          "field_acc_mean": 0.3969,
+          "field_acc_std": 0.0184,
+          "field_acc_95ci": [
+            0.3595,
+            0.4356
+          ],
+          "perfect_mean": 0.0,
+          "perfect_std": 0.0,
+          "ms_per_doc": 2.76,
+          "docs": 240
+        },
+        "GST-LayoutKIE (ours)": {
+          "field_acc_mean": 0.9786,
+          "field_acc_std": 0.0165,
+          "field_acc_95ci": [
+            0.9657,
+            0.9895
+          ],
+          "perfect_mean": 0.7833,
+          "perfect_std": 0.0144,
+          "ms_per_doc": 9.31,
+          "docs": 240
+        },
+        "CRF (linear-chain)": {
+          "field_acc_mean": 0.9955,
+          "field_acc_std": 0.0056,
+          "field_acc_95ci": [
+            0.9892,
+            0.9991
+          ],
+          "perfect_mean": 0.9542,
+          "perfect_std": 0.0191,
+          "ms_per_doc": 12.12,
+          "docs": 240
+        }
+      },
+      "mcnemar_vs_ours": {
+        "Regex rules": {
+          "ours_only": 188,
+          "other_only": 0,
+          "p_value": 5.0978941156238473e-57
+        },
+        "Layout heuristic": {
+          "ours_only": 188,
+          "other_only": 0,
+          "p_value": 5.0978941156238473e-57
+        },
+        "Rules ensemble": {
+          "ours_only": 188,
+          "other_only": 0,
+          "p_value": 5.0978941156238473e-57
+        },
+        "CRF (linear-chain)": {
+          "ours_only": 1,
+          "other_only": 42,
+          "p_value": 1.000444171950221e-11
+        }
+      }
+    },
+    "0.05": {
+      "table": {
+        "Regex rules": {
+          "field_acc_mean": 0.2148,
+          "field_acc_std": 0.016,
+          "field_acc_95ci": [
+            0.1908,
+            0.2414
+          ],
+          "perfect_mean": 0.0,
+          "perfect_std": 0.0,
+          "ms_per_doc": 0.84,
+          "docs": 240
+        },
+        "Layout heuristic": {
+          "field_acc_mean": 0.394,
+          "field_acc_std": 0.028,
+          "field_acc_95ci": [
+            0.3697,
+            0.4166
+          ],
+          "perfect_mean": 0.0,
+          "perfect_std": 0.0,
+          "ms_per_doc": 1.08,
+          "docs": 240
+        },
+        "Rules ensemble": {
+          "field_acc_mean": 0.3185,
+          "field_acc_std": 0.0225,
+          "field_acc_95ci": [
+            0.2899,
+            0.3483
+          ],
+          "perfect_mean": 0.0,
+          "perfect_std": 0.0,
+          "ms_per_doc": 1.79,
+          "docs": 240
+        },
+        "GST-LayoutKIE (ours)": {
+          "field_acc_mean": 0.8683,
+          "field_acc_std": 0.0084,
+          "field_acc_95ci": [
+            0.8425,
+            0.8941
+          ],
+          "perfect_mean": 0.2083,
+          "perfect_std": 0.052,
+          "ms_per_doc": 8.9,
+          "docs": 240
+        },
+        "CRF (linear-chain)": {
+          "field_acc_mean": 0.8931,
+          "field_acc_std": 0.0295,
+          "field_acc_95ci": [
+            0.8682,
+            0.9155
+          ],
+          "perfect_mean": 0.2542,
+          "perfect_std": 0.0439,
+          "ms_per_doc": 11.65,
+          "docs": 240
+        }
+      },
+      "mcnemar_vs_ours": {
+        "Regex rules": {
+          "ours_only": 50,
+          "other_only": 0,
+          "p_value": 1.7763568394002505e-15
+        },
+        "Layout heuristic": {
+          "ours_only": 50,
+          "other_only": 0,
+          "p_value": 1.7763568394002505e-15
+        },
+        "Rules ensemble": {
+          "ours_only": 50,
+          "other_only": 0,
+          "p_value": 1.7763568394002505e-15
+        },
+        "CRF (linear-chain)": {
+          "ours_only": 2,
+          "other_only": 13,
+          "p_value": 0.00738525390625
+        }
+      }
+    }
+  },
+  "train_seconds": {
+    "ours": 27.0,
+    "crf": 43.6
+  }
+}

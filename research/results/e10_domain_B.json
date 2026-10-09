@@ -1,0 +1,59 @@
+{
+  "target": "B",
+  "test_docs": 30,
+  "zero_shot_synth": {
+    "field_acc": 0.814,
+    "perfect_docs": 0.5333,
+    "n": 30
+  },
+  "multi_source_synth+A": {
+    "field_acc": 0.7239,
+    "perfect_docs": 0.4667,
+    "n": 30
+  },
+  "few_shot": {
+    "5": {
+      "field_acc": 0.8999,
+      "perfect_docs": 0.6333,
+      "n": 30
+    },
+    "10": {
+      "field_acc": 0.9385,
+      "perfect_docs": 0.7333,
+      "n": 30
+    },
+    "20": {
+      "field_acc": 0.9843,
+      "perfect_docs": 0.8333,
+      "n": 30
+    },
+    "40": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    }
+  },
+  "target_only": {
+    "5": {
+      "field_acc": 0.578,
+      "perfect_docs": 0.3333,
+      "n": 30
+    },
+    "10": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "20": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    },
+    "40": {
+      "field_acc": 1.0,
+      "perfect_docs": 1.0,
+      "n": 30
+    }
+  },
+  "seconds": 72.4
+}

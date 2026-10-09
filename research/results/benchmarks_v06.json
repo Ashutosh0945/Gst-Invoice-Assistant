@@ -1,0 +1,157 @@
+{
+  "note": "SYNTHETIC benchmark data with known ground truth. Not real-world accuracy.",
+  "reconciliation": {
+    "records": 276,
+    "register_invoices": 278,
+    "mix": {
+      "typo": 27,
+      "missing_2b": 29,
+      "tax": 27,
+      "date": 14,
+      "extra_2b": 32,
+      "format": 46,
+      "exact": 125
+    },
+    "ours": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_match_rate": 0.0,
+      "unmatched_rate": 0.1341,
+      "manual_review_rate": 0.1159,
+      "ambiguous_sent_to_review": 5,
+      "ambiguous_cases": 5
+    },
+    "baseline_exact_number": {
+      "precision": 0.977,
+      "recall": 0.887,
+      "false_match_rate": 0.0181,
+      "unmatched_rate": 0.2138,
+      "manual_review_rate": 0.0,
+      "ambiguous_sent_to_review": 0,
+      "ambiguous_cases": 5
+    }
+  },
+  "duplicates": {
+    "pairs": 400,
+    "true_duplicates": 203,
+    "ours": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.0,
+      "flagged_for_review": 203,
+      "flag_rate_by_case": {
+        "different_amount": "0/61",
+        "dup_format": "64/64",
+        "dup_ocr": "70/70",
+        "dup_reupload": "69/69",
+        "recurring": "0/62",
+        "same_number_other_vendor": "0/74"
+      }
+    },
+    "baseline_exact_number": {
+      "precision": 1.0,
+      "recall": 0.6552,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.3448,
+      "flagged_for_review": 133,
+      "flag_rate_by_case": {
+        "different_amount": "0/61",
+        "dup_format": "64/64",
+        "dup_ocr": "0/70",
+        "dup_reupload": "69/69",
+        "recurring": "0/62",
+        "same_number_other_vendor": "0/74"
+      }
+    }
+  },
+  "anomaly": {
+    "invoices": 900,
+    "anomalies": 43,
+    "review_budget": "top 7% of invoices",
+    "isolation_forest": {
+      "precision_at_k": 0.4884,
+      "precision_in_review_budget": 0.4127,
+      "recall_in_review_budget": 0.6047,
+      "false_positive_rate": 0.0432,
+      "roc_auc": 0.8956,
+      "review_workload": 63,
+      "recall_by_type": {
+        "amount_spike": "12/14",
+        "tax_rate_off": "0/8",
+        "burst": "7/14",
+        "combination": "7/7"
+      }
+    },
+    "robust_z_baseline": {
+      "precision_at_k": 0.5814,
+      "precision_in_review_budget": 0.5238,
+      "recall_in_review_budget": 0.7674,
+      "false_positive_rate": 0.035,
+      "roc_auc": 0.9129,
+      "review_workload": 63,
+      "recall_by_type": {
+        "amount_spike": "14/14",
+        "tax_rate_off": "8/8",
+        "burst": "7/14",
+        "combination": "4/7"
+      }
+    },
+    "ensemble_max_rank": {
+      "precision_at_k": 0.6512,
+      "precision_in_review_budget": 0.4603,
+      "recall_in_review_budget": 0.6744,
+      "false_positive_rate": 0.0397,
+      "roc_auc": 0.9246,
+      "review_workload": 63,
+      "recall_by_type": {
+        "amount_spike": "14/14",
+        "tax_rate_off": "2/8",
+        "burst": "7/14",
+        "combination": "6/7"
+      }
+    }
+  },
+  "forecasting": {
+    "metric": "MASE on the last 3 months (chronological holdout; < 1 = better than in-sample naive)",
+    "series_per_family": 25,
+    "families": {
+      "trend": {
+        "naive (last month)": 1.243,
+        "seasonal naive (same month last year)": 6.603,
+        "moving average (3 months)": 1.498,
+        "simple exponential smoothing": 1.235,
+        "Holt exponential smoothing": 0.934,
+        "linear trend": 0.651,
+        "selected (our procedure)": 0.749
+      },
+      "seasonal": {
+        "naive (last month)": 0.697,
+        "seasonal naive (same month last year)": 0.468,
+        "moving average (3 months)": 1.018,
+        "simple exponential smoothing": 0.681,
+        "Holt exponential smoothing": 2.3,
+        "linear trend": 1.797,
+        "selected (our procedure)": 0.468
+      },
+      "flat_noisy": {
+        "naive (last month)": 1.142,
+        "seasonal naive (same month last year)": 0.948,
+        "moving average (3 months)": 0.922,
+        "simple exponential smoothing": 0.785,
+        "Holt exponential smoothing": 1.257,
+        "linear trend": 0.882,
+        "selected (our procedure)": 1.012
+      },
+      "random_walk": {
+        "naive (last month)": 1.382,
+        "seasonal naive (same month last year)": 3.665,
+        "moving average (3 months)": 1.64,
+        "simple exponential smoothing": 1.41,
+        "Holt exponential smoothing": 1.511,
+        "linear trend": 2.268,
+        "selected (our procedure)": 1.458
+      }
+    }
+  }
+}

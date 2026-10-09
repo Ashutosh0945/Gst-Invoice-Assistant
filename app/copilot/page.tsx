@@ -108,6 +108,16 @@ function Answer({ m }: { m: Msg }) {
             </button>
           </div>
           {r.cards.map((c, i) => <DataCard key={i} c={c} />)}
+          {r.evidence && <details className="neu-inset p-3 text-xs"><summary className="cursor-pointer text-accent-soft">Evidence</summary>
+            <dl className="mt-2 space-y-1">
+              <div><dt className="inline text-ink-faint">Period: </dt><dd className="inline">{r.evidence.period}</dd></div>
+              <div><dt className="inline text-ink-faint">Response contains: </dt><dd className="inline">{r.evidence.response_categories.join(" · ") || "—"}</dd></div>
+              <div><dt className="inline text-ink-faint">Data sources: </dt><dd className="inline">{r.evidence.data_sources.join(", ") || "—"}</dd></div>
+              {r.evidence.definition && <div><dt className="inline text-ink-faint">Definition: </dt><dd className="inline">{r.evidence.definition}</dd></div>}
+              <div><dt className="inline text-ink-faint">Provenance: </dt><dd className="inline">{r.evidence.provenance}</dd></div>
+              <div><dt className="inline text-ink-faint">Limitations: </dt><dd className="inline">{r.evidence.limitations}</dd></div>
+              {r.evidence.records.length > 0 && <div><dt className="text-ink-faint">Records:</dt><dd className="flex flex-wrap gap-2 mt-1">{r.evidence.records.map((x, i) => <Link key={i} href={x.href} className="text-accent-soft">{x.label}</Link>)}</dd></div>}
+            </dl></details>}
           {showData && <pre className="text-xs neu-inset p-3 overflow-x-auto max-h-72">{JSON.stringify(r.facts, null, 2)}</pre>}
         </>
       )}

@@ -13,9 +13,18 @@ export function PwaManager() {
   const [queued, setQueued] = useState(0);
   const [canInstall, setCanInstall] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [update, setUpdate] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => undefined);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((reg) => {
+        const offer = () => { if (reg.waiting && navigator.serviceWorker.controller) setUpdate(reg.waiting); };
+        offer();
+        reg.addEventListener("updatefound", () => reg.installing?.addEventListener("statechange", offer));
+      }).catch(() => undefined);
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => { if (!reloaded) { reloaded = true; window.location.reload(); } });
+    }
     const refresh = () => listQueue().then((q) => setQueued(q.length)).catch(() => undefined);
     const sync = async () => {
       const n = await processQueue((item, num) => notify(`Uploaded ${num || item.name}`, "Your offline invoice has been processed.")).catch(() => 0);
@@ -50,6 +59,12 @@ export function PwaManager() {
         <button onClick={async () => { await window.__gstInstall?.prompt(); setCanInstall(false); }}
           className="fixed bottom-4 left-4 z-50 px-3.5 py-2 rounded-xl bg-base-raised shadow-neu text-sm flex items-center gap-2">
           <Download className="w-4 h-4 text-accent-soft" aria-hidden />Install app</button>
+      )}
+      {update && (
+        <div role="status" className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-accent text-white text-sm shadow-glow flex items-center gap-3">
+          A new version of GST Desk is available.
+          <button className="underline font-semibold" onClick={() => update.postMessage("SKIP_WAITING")}>Reload</button>
+        </div>
       )}
       {toast && <div role="status" className="fixed top-20 right-4 z-50 px-4 py-2.5 rounded-xl bg-good text-white text-sm shadow-glow">{toast}</div>}
     </>

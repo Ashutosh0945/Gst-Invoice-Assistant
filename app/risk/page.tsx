@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertOctagon, AlertTriangle, Eye, MessageSquareText, RefreshCw, Search } from "lucide-react";
 import { ai, inr, type Anomaly, type RiskItem } from "@/lib/ai";
+import { AnomalyPanel } from "@/components/V6Panels";
 
 const SEV: Record<string, { cls: string; icon: typeof AlertOctagon }> = {
   Critical: { cls: "text-bad bg-bad/10", icon: AlertOctagon },
@@ -50,7 +51,7 @@ export default function RiskCenter() {
       </div>
 
       <div className="flex gap-2 mb-4" role="tablist">
-        {([["issues", "Issues"], ["anomalies", `Unusual invoices${an ? ` (${an.items.length})` : ""}`]] as const).map(([k, l]) => (
+        {([["issues", "Issues"], ["anomalies", "Unusual invoices (ML + rules)"]] as const).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
             className={`px-4 py-2 rounded-xl text-sm ${tab === k ? "bg-base shadow-neu-in text-ink-strong" : "bg-base shadow-neu-sm text-ink-soft"}`}>{l}</button>
         ))}
@@ -89,6 +90,7 @@ export default function RiskCenter() {
             );
           })}</ul>)}
 
+      {tab === "anomalies" && <div className="mb-6"><AnomalyPanel /></div>}
       {tab === "anomalies" && an && (
         <div className="neu-card p-5">
           <p className="text-sm text-ink-soft mb-4">{an.note}{an.vendors_with_insufficient_history ? ` ${an.vendors_with_insufficient_history} vendor(s) don't have enough history yet.` : ""}</p>

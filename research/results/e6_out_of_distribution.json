@@ -1,0 +1,14 @@
+{
+  "Generator A (portrait)": {
+    "Regex rules": 1.0,
+    "Layout heuristic": 0.204,
+    "Rules ensemble": 1.0,
+    "GST-LayoutKIE (ours)": 0.3042
+  },
+  "Generator B (landscape)": {
+    "Regex rules": 0.2988,
+    "Layout heuristic": 1.0,
+    "Rules ensemble": 1.0,
+    "GST-LayoutKIE (ours)": 0.7756
+  }
+}

@@ -1,0 +1,23 @@
+<!-- Label Studio project config for real GST invoices (Settings -> Labeling Interface -> Code).
+     Draw a box around each field value, pick its label, and type/confirm the text.
+     Export as JSON and convert with: python -m research.data_collection.labelstudio_to_kie export.json out_dir -->
+<View>
+  <Image name="image" value="$image" zoom="true" zoomControl="true" rotateControl="true"/>
+  <RectangleLabels name="label" toName="image">
+    <Label value="VENDOR_NAME" background="#7C7CF2"/><Label value="VENDOR_GSTIN" background="#4ADE80"/>
+    <Label value="BUYER_GSTIN" background="#22C55E"/><Label value="INVOICE_NO" background="#F5A524"/>
+    <Label value="INVOICE_DATE" background="#FB923C"/><Label value="PO_NO" background="#A3A3A3"/>
+    <Label value="PLACE_OF_SUPPLY" background="#60A5FA"/><Label value="SUBTOTAL" background="#F87171"/>
+    <Label value="TOTAL_CGST" background="#E879F9"/><Label value="TOTAL_SGST" background="#C084FC"/>
+    <Label value="TOTAL_IGST" background="#A78BFA"/><Label value="ROUND_OFF" background="#94A3B8"/>
+    <Label value="GRAND_TOTAL" background="#EF4444"/>
+    <Label value="ITEM_DESC" background="#14B8A6"/><Label value="ITEM_HSN" background="#0EA5E9"/>
+    <Label value="ITEM_QTY" background="#84CC16"/><Label value="ITEM_UNIT" background="#65A30D"/>
+    <Label value="ITEM_PRICE" background="#EAB308"/><Label value="ITEM_TAXABLE" background="#F97316"/>
+    <Label value="ITEM_GSTRATE" background="#DB2777"/><Label value="ITEM_CGST" background="#9333EA"/>
+    <Label value="ITEM_SGST" background="#7E22CE"/><Label value="ITEM_IGST" background="#6D28D9"/>
+    <Label value="ITEM_TOTAL" background="#DC2626"/>
+  </RectangleLabels>
+  <TextArea name="transcription" toName="image" editable="true" perRegion="true" required="true" maxSubmissions="1" rows="1"
+            placeholder="Text inside the box"/>
+</View>
