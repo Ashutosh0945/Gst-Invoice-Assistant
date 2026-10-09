@@ -5,8 +5,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { themeBootScript } from "@/components/ThemeToggle";
 import { PwaManager } from "@/components/PwaManager";
-import Link from "next/link";
-import { probeApi } from "@/lib/api";
+import { Suspense } from "react";
+import { ApiProbeBanner } from "@/components/ApiProbeBanner";
 
 export const metadata: Metadata = {
   title: "GST Desk",
@@ -15,10 +15,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // If this site's server can't reach its own API, every page would silently look empty.
-  // Say so loudly instead.
-  const probe = await probeApi().catch(() => ({ ok: false, base: null, checks: [] }));
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -38,12 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="flex-1 min-w-0 flex flex-col">
             <Topbar />
             <main className="flex-1 px-5 md:px-8 pb-12">
-              {!probe.ok && (
-                <div role="alert" className="mt-6 rounded-2xl border border-bad/40 bg-bad/10 px-5 py-4 text-sm">
-                  <b className="text-bad">This site can&apos;t load its data right now,</b> so lists below may look empty even
-                  though your invoices are saved. <Link href="/status" className="underline text-ink-strong">See what&apos;s wrong</Link>
-                </div>
-              )}
+              <Suspense fallback={null}><ApiProbeBanner /></Suspense>
               {children}
             </main>
           </div>

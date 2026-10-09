@@ -17,3 +17,4 @@ numpy>=1.26
 cryptography>=42.0
 zxing-cpp>=2.2
 qrcode[pil]>=7.4
+rapidfuzz>=3.6          # near-duplicate scoring (backend.ml.duplicates imports it at load time)

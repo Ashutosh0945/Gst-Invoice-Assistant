@@ -98,10 +98,14 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
         if work_path != tmp_path:
             work_path.unlink(missing_ok=True)
     # ML / similarity checks run after the invoice is safely saved and can never fail the upload.
-    from backend.ml.anomaly import score_one_safely
-    from backend.ml.duplicates import scan_safely
-    scan_safely(db, invoice)
-    score_one_safely(db, invoice)
+    try:
+        from backend.ml.anomaly import score_one_safely
+        from backend.ml.duplicates import scan_safely
+        scan_safely(db, invoice)
+        score_one_safely(db, invoice)
+    except Exception:  # noqa: BLE001 - a missing optional dependency must not fail a saved upload
+        import logging
+        logging.getLogger(__name__).exception("Post-save ML checks skipped for %s", invoice.id)
     db.refresh(invoice)
     return invoice
 
