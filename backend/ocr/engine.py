@@ -156,6 +156,9 @@ def engine_name() -> str | None:
         return "PaddleOCR"
     if importlib.util.find_spec("rapidocr_onnxruntime"):
         return "RapidOCR (PaddleOCR models on onnxruntime)"
+    from backend.ocr.vlm import vlm_configured, vlm_engine_label
+    if vlm_configured():
+        return vlm_engine_label()
     if settings.ocr_space_api_key:
         return "OCR.space (free API)"
     return None
@@ -235,7 +238,8 @@ def _run_ocr_space(image_bgr: np.ndarray) -> list[OCRWord]:
 
 
 def run_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
-    """OCR with free fallbacks. Order: Google Vision (if key) -> local PaddleOCR/RapidOCR -> OCR.space
+    """OCR with free fallbacks. Order: Google Vision (if key) -> local PaddleOCR/RapidOCR -> OpenRouter VLM
+    (nvidia/nemotron-3.5-super-vl:free, if OPENROUTER_API_KEY) -> OCR.space
     (if free key) -> words read in the user's browser (Tesseract.js) -> OCRUnavailable."""
     from backend.ocr.client_ocr import OCR_USED, words_for_image
 
@@ -246,6 +250,14 @@ def run_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
     except OCRUnavailable:
         pass
     settings = get_settings()
+    from backend.ocr.vlm import run_vlm_ocr, vlm_configured, vlm_engine_label
+    if vlm_configured():
+        try:
+            words = run_vlm_ocr(image_bgr)
+            OCR_USED.set(vlm_engine_label())
+            return words
+        except OCRUnavailable as exc:
+            logger.warning("Vision-model OCR failed, trying next engine: %s", exc)
     if settings.ocr_space_api_key:
         try:
             from backend.ocr.client_ocr import repair_gstin_tokens
@@ -262,6 +274,15 @@ def run_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
     raise OCRUnavailable("No OCR engine available on this server and no browser OCR result was sent.")
 
 
+def browser_ocr_needed() -> bool:
+    """Should the browser also run Tesseract.js? Yes unless a dependable server engine exists. The free VLM
+    is rate limited, so it doesn't count: the browser words are the safety net if it fails."""
+    name = engine_name()
+    return name is None or name.endswith("(OpenRouter VLM)")
+
+
 def ocr_status() -> dict:
+    from backend.ocr.vlm import vlm_configured
     s = get_settings()
-    return {"server_engine": engine_name(), "ocr_space": bool(s.ocr_space_api_key), "browser_ocr": "Tesseract.js 5 (self-hosted)"}
+    return {"server_engine": engine_name(), "ocr_space": bool(s.ocr_space_api_key), "browser_ocr": "Tesseract.js 5 (self-hosted)",
+            "vlm_ocr": s.openrouter_ocr_model if vlm_configured() else None}

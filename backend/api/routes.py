@@ -150,20 +150,20 @@ async def capture_analyze(file: UploadFile):
         r = run_capture(img)
     except Exception as exc:  # noqa: BLE001
         logging.getLogger(__name__).exception("Capture analysis failed")
-        from backend.ocr.engine import engine_name
+        from backend.ocr.engine import browser_ocr_needed, engine_name
         return {"capture_failed": True, "message": "Couldn't optimise this photo; you can still upload the original.",
                 "error": f"{type(exc).__name__}", "steps": [], "enhanced": None, "ocr_ready": None, "ocr_ready_same_as_enhanced": True,
                 "quality": {"verdict": "fair", "score": None, "warnings": [{"code": "not_analysed", "severity": "low",
                             "message": "Photo optimisation failed, so quality couldn't be checked. The original photo will be used."}], "metrics": {}},
                 "ocr_engine": engine_name(), "ocr_available": engine_name() is not None,
-            "browser_ocr_needed": engine_name() is None}
+            "browser_ocr_needed": browser_ocr_needed()}
     b64 = lambda im: "data:image/jpeg;base64," + base64.b64encode(to_jpeg(im)).decode()  # noqa: E731
     same = r.ocr_ready is r.enhanced
-    from backend.ocr.engine import engine_name
+    from backend.ocr.engine import browser_ocr_needed, engine_name
     return {"steps": r.steps, "quality": r.quality, "enhanced": b64(r.enhanced),
             "ocr_ready": None if same else b64(r.ocr_ready), "ocr_ready_same_as_enhanced": same,
             "ocr_engine": engine_name(), "ocr_available": engine_name() is not None,
-            "browser_ocr_needed": engine_name() is None}
+            "browser_ocr_needed": browser_ocr_needed()}
 
 
 @router.get("/invoices", response_model=list[InvoiceSummaryOut])

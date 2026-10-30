@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     ocr_space_api_key: str | None = None      # free key from https://ocr.space/ocrapi (optional)
     ocr_space_url: str | None = None
     ocr_space_timeout_s: float = 30.0
+    # Vision-language-model OCR through OpenRouter (reuses OPENROUTER_API_KEY). Free tier is rate limited,
+    # so run_ocr falls back to the next engine on failure.  Disable with VLM_OCR_ENABLED=false.
+    vlm_ocr_enabled: bool = True
+    openrouter_ocr_model: str = "nvidia/nemotron-3.5-super-vl:free"
+    vlm_ocr_timeout_s: float = 40.0          # total budget across retries; must fit Vercel's 60 s limit
+    vlm_ocr_max_retries: int = 2
+    vlm_ocr_max_tokens: int = 4096
     layoutlm_model_path: str | None = None
 
     # --- deterministic validation tolerances (INR) ---

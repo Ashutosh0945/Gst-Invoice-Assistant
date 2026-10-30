@@ -11,7 +11,17 @@ Now photos are read **in the user's browser** with **Tesseract.js 5.1.1** (free,
    extraction only if the server has no OCR engine of its own. The engine used is recorded in the audit log.
 
 Engine order on the server: Google Vision (if `GOOGLE_VISION_API_KEY`) → local PaddleOCR/RapidOCR →
-OCR.space (if `OCR_SPACE_API_KEY`) → browser Tesseract.js words → "no OCR".
+**OpenRouter vision model** (if `OPENROUTER_API_KEY`) → OCR.space (if `OCR_SPACE_API_KEY`) → browser Tesseract.js words → "no OCR".
+
+## Vision-language-model OCR (OpenRouter)
+`backend/ocr/vlm.py` sends the page image to `nvidia/nemotron-3.5-super-vl:free` and turns its text segments
+(+ approximate 0-1000 boxes) into the same word list the other engines produce. Uses the existing
+`OPENROUTER_API_KEY`; nothing to install. Settings: `VLM_OCR_ENABLED` (default true), `OPENROUTER_OCR_MODEL`.
+- Model boxes are approximate and treated as untrusted; unusable ones fall back to a reading-order layout.
+- The free tier is rate limited. On any failure the chain continues to OCR.space / browser OCR, and while the VLM is
+  the only server engine the browser still runs Tesseract.js as a safety net (`browser_ocr_needed`).
+- The engine used is recorded in the audit log (`OCR_ENGINE`). Invoice images are sent to OpenRouter/NVIDIA's provider.
+- Not yet benchmarked on real invoices; compare against Tesseract.js before relying on it for auto-approval.
 
 ## Measured (12 unseen synthetic invoices, real Tesseract.js, through the real upload API)
 | Input | Before (no OCR) | Browser OCR |
