@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Camera, CheckCircle2, CircleAlert, FileUp, Loader2, Save, Search, WifiOff } from "lucide-react";
 import { type InvoiceDetail } from "@/lib/api";
+import { browserOcr, ocrForUpload } from "@/lib/browser-ocr";
 import { enqueue, hashFile, markUploaded, wasUploaded } from "@/lib/offline-queue";
 import { ErrorNote } from "@/components/ui";
 
@@ -11,7 +12,7 @@ type Stage = "idle" | "uploading" | "processing" | "complete" | "queued" | "erro
 const PIPE_PDF = ["Uploading", "OCR / reading", "Extraction", "Validation & reconciliation", "Complete"];
 const PIPE_IMG = ["Detecting document", "Enhancing", "Quality check", "Uploading", "OCR", "Extraction", "Complete"];
 type Capture = { steps: Array<{ step: string; done: boolean; detail: string }>; enhanced: string; ocr_ready: string | null;
-  ocr_ready_same_as_enhanced: boolean; ocr_available: boolean; ocr_engine: string | null;
+  ocr_ready_same_as_enhanced: boolean; ocr_available: boolean; ocr_engine: string | null; browser_ocr_needed?: boolean;
   quality: { verdict: "good" | "fair" | "poor"; score: number; warnings: Array<{ code: string; severity: string; message: string }>; metrics: Record<string, unknown> } };
 const FIELDS: Array<[keyof InvoiceDetail & string, string, string]> = [
   ["vendor_name_raw", "Vendor", "vendor_name"], ["vendor_gstin_raw", "Vendor GSTIN", "vendor_gstin"],
@@ -21,7 +22,7 @@ const FIELDS: Array<[keyof InvoiceDetail & string, string, string]> = [
 
 let currentXhr: XMLHttpRequest | null = null;
 
-function upload(file: File, onProgress: (p: number) => void, optimize = false, key?: string): Promise<InvoiceDetail> {
+function upload(file: File, onProgress: (p: number) => void, optimize = false, key?: string, clientOcr?: string | null): Promise<InvoiceDetail> {
   // XMLHttpRequest (not fetch) so we can show real upload progress.
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -37,7 +38,7 @@ function upload(file: File, onProgress: (p: number) => void, optimize = false, k
       else reject(Object.assign(new Error((data as { detail?: string }).detail || `The server returned an error (${xhr.status}).`), { network: false }));
     };
     xhr.onerror = () => reject(Object.assign(new Error("Network error"), { network: true }));
-    const form = new FormData(); form.append("file", file); xhr.send(form);
+    const form = new FormData(); form.append("file", file); if (clientOcr) form.append("client_ocr", clientOcr); xhr.send(form);
   });
 }
 
@@ -53,6 +54,7 @@ export default function UploadPage() {
   const [dupWarn, setDupWarn] = useState(false);
   const [result, setResult] = useState<InvoiceDetail | null>(null);
   const [cap, setCap] = useState<Capture | null>(null);
+  const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [capBusy, setCapBusy] = useState(false);
   const [view, setView] = useState<"original" | "enhanced" | "ocr">("enhanced");
   const isImage = !!file && file.type.startsWith("image/");
@@ -96,7 +98,18 @@ export default function UploadPage() {
     }
     setStage("uploading"); setProgress(0);
     try {
-      const inv = await upload(file, (p) => { setProgress(p); if (p >= 100) setStage("processing"); }, isImage, `sha256-${hash}`);
+      let clientOcr: string | null = null;
+      if (isImage && (cap ? cap.browser_ocr_needed !== false : true)) {
+        setOcrPct(0);
+        try {
+          clientOcr = cap ? await browserOcr(cap.ocr_ready || cap.enhanced, setOcrPct) : await ocrForUpload(file, file.name, isImage);
+        } catch {
+          clientOcr = null;      // browser can't run OCR: upload anyway; the server reports what it could read
+        } finally {
+          setOcrPct(null);
+        }
+      }
+      const inv = await upload(file, (p) => { setProgress(p); if (p >= 100) setStage("processing"); }, isImage, `sha256-${hash}`, clientOcr);
       await markUploaded(hash, inv.id);
       setResult(inv); setStage("complete");
     } catch (e) {
@@ -150,8 +163,11 @@ export default function UploadPage() {
                   {cap.quality.verdict === "poor" && <button className="btn py-1.5" onClick={() => { setCap({ ...cap, quality: { ...cap.quality, verdict: "fair" } }); }}>Use anyway</button>}
                 </div>
               </div>)}
-            {cap && !cap.ocr_available && (
-              <p role="alert" className="mt-3 text-sm rounded-xl bg-warn/10 text-warn p-3">This server has no OCR engine installed, so photos can&apos;t be read here yet. Upload a PDF, or see Security &amp; Compliance → System health.</p>)}
+            {cap && cap.browser_ocr_needed !== false && ocrPct === null && (
+              <p role="status" className="mt-3 text-sm rounded-xl bg-info/10 text-info p-3">The text on this photo will be read in your browser (free, private Tesseract OCR) when you process it.</p>)}
+            {ocrPct !== null && (
+              <p role="status" className="mt-3 text-sm rounded-xl bg-accent/10 p-3 flex items-center gap-2 justify-center">
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden />Reading text in your browser… {ocrPct}%</p>)}
             {dupWarn && (
               <div role="alert" className="mt-4 text-sm rounded-xl bg-warn/10 text-warn p-3">This exact file was already uploaded from this device.
                 <button className="underline ml-2" onClick={() => run(true)}>Upload again anyway</button></div>)}

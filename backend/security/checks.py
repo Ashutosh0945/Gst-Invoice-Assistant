@@ -65,9 +65,10 @@ def system_health() -> list[dict]:
     out.append(_chk("PDF reading", "Healthy" if pdf_ok else "Unavailable", "PyMuPDF installed: text PDFs can be read." if pdf_ok else "PyMuPDF missing.", weight=1, passed=pdf_ok))
     from backend.ocr.engine import engine_name
     eng_name = engine_name()
-    out.append(_chk("Photo / scan reading (OCR)", "Healthy" if eng_name else "Unavailable",
-                    f"{eng_name} installed." if eng_name else "No OCR engine on this server: photos and scanned PDFs can't be read. "
-                    "Install requirements-ocr.txt where the host allows it.", weight=1, passed=bool(eng_name)))
+    out.append(_chk("Photo / scan reading (OCR)", "Healthy" if eng_name else "Degraded",
+                    f"{eng_name} on the server." if eng_name else "No server OCR engine; photos are read in the user's browser with "
+                    "Tesseract.js (free, self-hosted). Scanned multi-page PDFs need a server engine (OCR_SPACE_API_KEY is free).",
+                    weight=1, passed=True))
     return out
 
 

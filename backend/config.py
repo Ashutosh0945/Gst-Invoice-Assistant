@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Keep the key server-side; never expose it through NEXT_PUBLIC_* variables.
     google_vision_api_key: str | None = None
     google_vision_timeout_s: float = 30.0
+    ocr_space_api_key: str | None = None      # free key from https://ocr.space/ocrapi (optional)
+    ocr_space_url: str | None = None
+    ocr_space_timeout_s: float = 30.0
     layoutlm_model_path: str | None = None
 
     # --- deterministic validation tolerances (INR) ---

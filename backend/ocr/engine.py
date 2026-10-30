@@ -156,10 +156,12 @@ def engine_name() -> str | None:
         return "PaddleOCR"
     if importlib.util.find_spec("rapidocr_onnxruntime"):
         return "RapidOCR (PaddleOCR models on onnxruntime)"
+    if settings.ocr_space_api_key:
+        return "OCR.space (free API)"
     return None
 
 
-def run_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
+def _run_server_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
     """Run OCR on a BGR image and return word-level boxes with confidence."""
     kind, engine = _get_engine()
 
@@ -184,3 +186,82 @@ def run_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
             conf=float(conf),
         ))
     return words
+
+# ----------------------------------------------------------------------------- free fallbacks
+OCR_SPACE_URL = "https://api.ocr.space/parse/image"
+
+
+def _run_ocr_space(image_bgr: np.ndarray) -> list[OCRWord]:
+    """OCR.space free API (needs a free key in OCR_SPACE_API_KEY). Free-tier uploads must be <= 1 MB,
+    so the image is sent as a JPEG that is shrunk until it fits; boxes are scaled back to the full image."""
+    import base64
+
+    import cv2
+    import httpx
+
+    settings = get_settings()
+    h, w = image_bgr.shape[:2]
+    img, scale, quality = image_bgr, 1.0, 85
+    side = 2000
+    while True:
+        s_ = min(1.0, side / max(h, w))
+        img = cv2.resize(image_bgr, (int(w * s_), int(h * s_)), interpolation=cv2.INTER_AREA) if s_ < 1 else image_bgr
+        ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        if len(buf) <= 950_000 or side <= 900:
+            scale = s_
+            break
+        side, quality = side - 300, max(60, quality - 5)
+    try:
+        resp = httpx.post(settings.ocr_space_url or OCR_SPACE_URL, timeout=settings.ocr_space_timeout_s,
+                          data={"apikey": settings.ocr_space_api_key, "language": "eng", "isOverlayRequired": "true",
+                                "OCREngine": "2", "scale": "true", "detectOrientation": "true",
+                                "base64Image": "data:image/jpeg;base64," + base64.b64encode(buf.tobytes()).decode()})
+        resp.raise_for_status()
+        data = resp.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise OCRUnavailable(f"OCR.space request failed: {type(exc).__name__}") from exc
+    if data.get("IsErroredOnProcessing"):
+        raise OCRUnavailable(f"OCR.space error: {str(data.get('ErrorMessage'))[:200]}")
+    words: list[OCRWord] = []
+    for res in data.get("ParsedResults") or []:
+        for line in ((res.get("TextOverlay") or {}).get("Lines") or []):
+            for wd in line.get("Words") or []:
+                t = (wd.get("WordText") or "").strip()
+                if not t:
+                    continue
+                x0, y0 = wd["Left"] / scale, wd["Top"] / scale
+                words.append(OCRWord(text=t, bbox=(x0, y0, x0 + wd["Width"] / scale, y0 + wd["Height"] / scale), conf=0.9))
+    return words
+
+
+def run_ocr(image_bgr: np.ndarray) -> list[OCRWord]:
+    """OCR with free fallbacks. Order: Google Vision (if key) -> local PaddleOCR/RapidOCR -> OCR.space
+    (if free key) -> words read in the user's browser (Tesseract.js) -> OCRUnavailable."""
+    from backend.ocr.client_ocr import OCR_USED, words_for_image
+
+    try:
+        words = _run_server_ocr(image_bgr)
+        OCR_USED.set(engine_name() or "server")
+        return words
+    except OCRUnavailable:
+        pass
+    settings = get_settings()
+    if settings.ocr_space_api_key:
+        try:
+            from backend.ocr.client_ocr import repair_gstin_tokens
+            words = repair_gstin_tokens(_run_ocr_space(image_bgr))
+            OCR_USED.set("OCR.space")
+            return words
+        except OCRUnavailable as exc:
+            logger.warning("OCR.space failed, trying browser OCR: %s", exc)
+    h, w = image_bgr.shape[:2]
+    words = words_for_image(w, h)
+    if words is not None:
+        OCR_USED.set("Tesseract.js (browser)")
+        return words
+    raise OCRUnavailable("No OCR engine available on this server and no browser OCR result was sent.")
+
+
+def ocr_status() -> dict:
+    s = get_settings()
+    return {"server_engine": engine_name(), "ocr_space": bool(s.ocr_space_api_key), "browser_ocr": "Tesseract.js 5 (self-hosted)"}

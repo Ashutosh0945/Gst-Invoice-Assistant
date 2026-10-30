@@ -66,6 +66,11 @@ export async function processQueue(onDone?: (item: QueueItem, invoiceNumber?: st
       try {
         const form = new FormData();
         form.append("file", new File([item.blob], item.name, { type: item.type }));
+        try {   // photos: read the text in the browser if the server has no OCR engine
+          const { ocrForUpload } = await import("@/lib/browser-ocr");
+          const clientOcr = await ocrForUpload(item.blob, item.name, !!item.optimize);
+          if (clientOcr) form.append("client_ocr", clientOcr);
+        } catch { /* OCR unavailable in this browser: upload without it */ }
         const res = await fetch(`/api/v1/invoices${item.optimize ? "?optimize=true" : ""}`, { method: "POST", body: form,
           headers: { "Idempotency-Key": `sha256-${item.hash}` } });   // a retry can never create a second invoice
         const data = await res.json().catch(() => ({}));

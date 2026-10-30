@@ -23,7 +23,7 @@ setup_logging()
 logger = logging.getLogger("backend.api")
 
 # Shown by /health so you can confirm which version is live after a deploy.
-APP_VERSION = "0.6.0 (actions-ml)"
+APP_VERSION = "0.6.1 (free-ocr)"
 
 
 def _prepare_database() -> None:

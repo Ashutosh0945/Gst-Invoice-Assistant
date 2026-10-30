@@ -52,7 +52,7 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return; // Never cache live/sensitive API data.
 
   // Next.js static chunks and public assets: cache-first with network fill.
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname === "/manifest.webmanifest") {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/tesseract/") || url.pathname === "/manifest.webmanifest") {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;

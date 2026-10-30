@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,7 +31,8 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
 
 @router.post("/invoices", response_model=InvoiceDetailOut, status_code=201)
 def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depends(get_db),
-                   idempotency_key: str | None = Header(default=None, max_length=128)):
+                   idempotency_key: str | None = Header(default=None, max_length=128),
+                   client_ocr: str | None = Form(default=None)):
     """optimize=true (camera photos): the photo goes through the capture pipeline first and the
     OCR-ready image -- not the raw photo -- is passed to the existing OCR/extraction pipeline."""
     from backend.db.models import Document, UploadReceipt
@@ -41,6 +42,16 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
             existing = db.get(Invoice, receipt.invoice_id)
             if existing is not None:
                 return existing
+    from backend.ocr.client_ocr import CLIENT_OCR, OCR_USED, ClientOCR
+    browser_ocr = None
+    if client_ocr:
+        if len(client_ocr) > 2_000_000:
+            raise HTTPException(413, "Browser OCR result is too large.")
+        try:
+            browser_ocr = ClientOCR.model_validate_json(client_ocr)
+        except Exception as exc:  # noqa: BLE001 - malformed input from the client
+            raise HTTPException(422, f"Browser OCR result is invalid: {type(exc).__name__}") from exc
+    ocr_token, used_token = CLIENT_OCR.set(browser_ocr), OCR_USED.set(None)
     suffix = (Path(file.filename or "invoice").suffix or ".pdf").lower()
     allowed = {".pdf"} | IMAGE_SUFFIXES
     if suffix not in allowed:
@@ -68,7 +79,17 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
                     logging.getLogger(__name__).exception("Capture optimisation failed; using the original photo")
                     capture_error = f"{type(exc).__name__}: {str(exc)[:200]}"
                     work_path, capture = tmp_path, None
-        invoice = process_invoice_file(db, work_path)
+        try:
+            invoice = process_invoice_file(db, work_path)
+        finally:
+            ocr_engine_used = OCR_USED.get()
+            CLIENT_OCR.reset(ocr_token)
+            OCR_USED.reset(used_token)
+        if ocr_engine_used:
+            from backend.services.audit_service import log_action
+            log_action(db, invoice.id, actor="system", action="OCR_ENGINE",
+                       details={"engine": ocr_engine_used, "browser_words": len(browser_ocr.words) if browser_ocr else 0})
+            db.commit()
         if capture_error is not None:
             from backend.services.audit_service import log_action
             log_action(db, invoice.id, actor="system", action="CAPTURE_FAILED",
@@ -104,7 +125,6 @@ def upload_invoice(file: UploadFile, optimize: bool = False, db: Session = Depen
         scan_safely(db, invoice)
         score_one_safely(db, invoice)
     except Exception:  # noqa: BLE001 - a missing optional dependency must not fail a saved upload
-        import logging
         logging.getLogger(__name__).exception("Post-save ML checks skipped for %s", invoice.id)
     db.refresh(invoice)
     return invoice
@@ -135,13 +155,15 @@ async def capture_analyze(file: UploadFile):
                 "error": f"{type(exc).__name__}", "steps": [], "enhanced": None, "ocr_ready": None, "ocr_ready_same_as_enhanced": True,
                 "quality": {"verdict": "fair", "score": None, "warnings": [{"code": "not_analysed", "severity": "low",
                             "message": "Photo optimisation failed, so quality couldn't be checked. The original photo will be used."}], "metrics": {}},
-                "ocr_engine": engine_name(), "ocr_available": engine_name() is not None}
+                "ocr_engine": engine_name(), "ocr_available": engine_name() is not None,
+            "browser_ocr_needed": engine_name() is None}
     b64 = lambda im: "data:image/jpeg;base64," + base64.b64encode(to_jpeg(im)).decode()  # noqa: E731
     same = r.ocr_ready is r.enhanced
     from backend.ocr.engine import engine_name
     return {"steps": r.steps, "quality": r.quality, "enhanced": b64(r.enhanced),
             "ocr_ready": None if same else b64(r.ocr_ready), "ocr_ready_same_as_enhanced": same,
-            "ocr_engine": engine_name(), "ocr_available": engine_name() is not None}
+            "ocr_engine": engine_name(), "ocr_available": engine_name() is not None,
+            "browser_ocr_needed": engine_name() is None}
 
 
 @router.get("/invoices", response_model=list[InvoiceSummaryOut])
